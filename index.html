@@ -1,0 +1,2002 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>漢達 6620 · 財務預測模型 v2.7</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0d1117;--s1:#161b22;--s2:#1c2333;--b1:#30363d;--b2:#3d444d;
+  --c1:#58a6ff;--c2:#79c0ff;--c3:#b6d7ff;
+  --g1:#3fb950;--g2:#56d364;--g3:#8de89a;
+  --a1:#d29922;--a2:#e3b341;--a3:#f0c060;
+  --r1:#f85149;--r2:#ff7b72;
+  --p1:#bc8cff;--p2:#d2a8ff;
+  --t1:#39d0d8;--t2:#5ee2e8;
+  --text:#e6edf3;--text2:#c9d1d9;--muted:#8b949e;--dim:#21262d;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Noto Sans TC',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.6;overflow-x:hidden;min-height:100vh}
+
+/* ── SHELL ── */
+.shell{max-width:1440px;margin:0 auto;padding:28px 24px}
+
+/* ── HEADER ── */
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid var(--b1)}
+.hdr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);color:var(--c2);font-family:var(--mono);font-size:12px;letter-spacing:2px;padding:5px 14px;border-radius:4px;margin-bottom:10px}
+.hdr-badge::before{content:'●';color:var(--g2);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hdr-title{font-size:28px;font-weight:700;letter-spacing:-.5px;line-height:1.2;color:var(--text)}
+.hdr-title span{color:var(--c2)}
+.hdr-sub{font-size:13px;color:var(--muted);margin-top:5px;font-family:var(--mono)}
+.hdr-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.btn-sm{background:var(--s2);border:1px solid var(--b1);color:var(--text2);font-size:13px;padding:8px 16px;border-radius:6px;cursor:pointer;transition:all .2s}
+.btn-sm:hover{background:var(--b1);border-color:var(--c1);color:var(--c2)}
+.btn-sm.primary{background:rgba(88,166,255,.15);border-color:rgba(88,166,255,.4);color:var(--c2)}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:4px;margin-bottom:24px;flex-wrap:wrap}
+.tab{background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:14px;font-weight:500;padding:9px 20px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.tab.on{background:var(--s2);color:var(--c2);border:1px solid rgba(88,166,255,.3);box-shadow:0 0 12px rgba(88,166,255,.08)}
+.tab:hover:not(.on){background:var(--dim);color:var(--text2)}
+
+/* ── PANELS ── */
+.panel{display:none}.panel.on{display:block}
+
+/* ── SECTION HEADER ── */
+.sec-hd{display:flex;align-items:center;gap:12px;margin-bottom:18px;color:var(--c2);font-size:13px;font-family:var(--mono);letter-spacing:2px;text-transform:uppercase}
+.sec-hd::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--b2),transparent)}
+
+/* ── KPI CARDS ── */
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+.kcard{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:18px 20px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s}
+.kcard::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kc,var(--c1))}
+.kcard:hover{transform:translateY(-2px);border-color:var(--b2)}
+.kl{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.kv{font-size:26px;font-weight:700;font-family:var(--mono);line-height:1}
+.ks{font-size:12px;color:var(--muted);margin-top:6px}
+.ktag{display:inline-block;font-size:11px;font-family:var(--mono);padding:2px 8px;border-radius:3px;margin-top:4px}
+.ktag.up{background:rgba(63,185,80,.15);color:var(--g2);border:1px solid rgba(63,185,80,.3)}
+.ktag.dn{background:rgba(248,81,73,.12);color:var(--r2);border:1px solid rgba(248,81,73,.3)}
+.ktag.nt{background:rgba(139,148,158,.1);color:var(--muted);border:1px solid var(--b1)}
+
+/* ── CHART BOX ── */
+.cbox{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:24px;margin-bottom:20px}
+.cbox-hd{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.ctitle{font-size:16px;font-weight:600;color:var(--text)}
+.csub{font-size:12px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.leg{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text2)}
+.legdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* ── SCE CONTROL ── */
+.sce-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.sce-lbl{font-size:13px;color:var(--muted);font-family:var(--mono)}
+.sbg{display:flex;gap:3px;background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:3px}
+.sb{background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:13px;padding:7px 18px;border-radius:4px;cursor:pointer;transition:all .2s}
+.sb.on{background:var(--dim);color:var(--a2);border:1px solid rgba(210,153,34,.3)}
+.sb:hover:not(.on){background:rgba(255,255,255,.05);color:var(--text2)}
+.sce-desc{font-size:12px;color:var(--a2);font-family:var(--mono)}
+
+/* ── TABLE ── */
+.tbox{background:var(--s1);border:1px solid var(--b1);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.thdr{padding:16px 22px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.ttitle{font-size:15px;font-weight:600;color:var(--text)}
+.tnote{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.tscr{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--s2)}
+th{padding:11px 16px;text-align:right;font-family:var(--mono);font-size:11px;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--b1);white-space:nowrap}
+th:first-child{text-align:left}
+td{padding:11px 16px;text-align:right;border-bottom:1px solid var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums;font-size:13px}
+td:first-child{text-align:left;font-size:14px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(88,166,255,.04)}
+.yr-sep td{background:rgba(88,166,255,.06);font-family:var(--mono);font-size:12px;color:var(--c2);letter-spacing:2px;border-top:1px solid rgba(88,166,255,.15);border-bottom:1px solid rgba(88,166,255,.15);padding:8px 16px;font-weight:700}
+.q-sep td{background:rgba(255,255,255,.02);font-family:var(--mono);font-size:11px;color:var(--muted);border-top:1px dashed var(--b1)}
+
+/* ── COLOR HELPERS ── */
+.pos{color:var(--g2)}.neg{color:var(--r2)}.neu{color:var(--muted)}
+.bold{font-weight:700}
+.cc{color:var(--c2)}.cg{color:var(--g2)}.ca{color:var(--a2)}.cp{color:var(--p2)}.ct{color:var(--t2)}.cr{color:var(--r2)}
+.flag{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:3px;letter-spacing:.5px}
+.flag-a{background:rgba(63,185,80,.12);color:var(--g2);border:1px solid rgba(63,185,80,.3)}
+.flag-f{background:rgba(210,153,34,.1);color:var(--a2);border:1px solid rgba(210,153,34,.25)}
+.flag-039{background:rgba(188,140,255,.1);color:var(--p2);border:1px solid rgba(188,140,255,.3)}
+.flag-r{background:rgba(248,81,73,.1);color:var(--r2);border:1px solid rgba(248,81,73,.3)}
+
+/* ── TWO COL ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:720px){.two-col{grid-template-columns:1fr}}
+@media(max-width:860px){.upd-layout{grid-template-columns:1fr!important}}
+
+/* ── INPUT CARDS ── */
+.input-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px}
+.input-card{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:20px}
+.input-title{font-size:14px;font-weight:600;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.idot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.frow{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px}
+.flabel{font-size:13px;color:var(--text2);flex:1}
+.finput{background:var(--s2);border:1px solid var(--b2);color:var(--text);font-family:var(--mono);font-size:13px;padding:6px 10px;border-radius:5px;width:110px;text-align:right;transition:border-color .2s}
+.finput:focus{outline:none;border-color:var(--c1)}
+.fselect{background:var(--s2);border:1px solid var(--b2);color:var(--text2);font-family:var(--mono);font-size:12px;padding:6px 8px;border-radius:5px;cursor:pointer}
+.fselect:focus{outline:none;border-color:var(--c1)}
+
+/* ── UPDATE MODULE ── */
+.upd-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:720px){.upd-grid{grid-template-columns:1fr}}
+.upd-card{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:20px}
+.upd-title{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.irow{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;gap:8px}
+.irow label{font-size:13px;color:var(--text2);flex:1}
+.num-in{background:var(--s2);border:1px solid var(--b2);color:var(--text);font-family:var(--mono);font-size:13px;padding:6px 10px;border-radius:5px;width:110px;text-align:right}
+.num-in:focus{outline:none;border-color:var(--c1)}
+.act-btn{background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.35);color:var(--c2);font-family:var(--sans);font-size:13px;font-weight:500;padding:10px 20px;border-radius:7px;cursor:pointer;transition:all .2s;width:100%;margin-top:10px}
+.act-btn:hover{background:rgba(88,166,255,.25);border-color:var(--c1)}
+
+/* ── EPS QUARTERLY TABLE ── */
+.eps-q-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.eps-qcard{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:14px 16px;text-align:center}
+.eps-qcard.actual{border-color:rgba(63,185,80,.3);background:rgba(63,185,80,.04)}
+.eps-qcard.forecast{border-color:rgba(210,153,34,.25)}
+.eps-qcard.big-039{border-color:rgba(188,140,255,.4);background:rgba(188,140,255,.04)}
+.eps-qlabel{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:6px}
+.eps-qval{font-family:var(--mono);font-size:22px;font-weight:700;line-height:1}
+.eps-qtag{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* ── 039 TRIGGER ── */
+.trigger-box{background:linear-gradient(135deg,rgba(188,140,255,.07),rgba(88,166,255,.04));border:1px solid rgba(188,140,255,.25);border-radius:12px;padding:22px;margin-bottom:20px}
+.trig-title{font-size:15px;font-weight:600;color:var(--p2);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.trig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.trig-item{font-size:13px;color:var(--text2);line-height:1.6}
+.trig-item strong{color:var(--text);display:block}
+
+/* ── 3 SCENARIO BOXES ── */
+.sce3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px}
+@media(max-width:600px){.sce3{grid-template-columns:1fr}}
+.sce3card{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:18px}
+.sce3card.active{border-color:rgba(210,153,34,.4);background:rgba(210,153,34,.03)}
+
+/* ── DIFF ── */
+.diff{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:3px}
+.diff-up{background:rgba(63,185,80,.12);color:var(--g2)}
+.diff-dn{background:rgba(248,81,73,.1);color:var(--r2)}
+.diff-eq{background:rgba(139,148,158,.1);color:var(--muted)}
+
+/* ── FOOTER ── */
+.foot{margin-top:32px;padding:16px 0;border-top:1px solid var(--b1);font-size:12px;color:var(--muted);line-height:1.8;text-align:center;font-family:var(--mono)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeUp .5s ease both}
+
+/* ── MOBILE ── */
+@media(max-width:640px){
+  .shell{padding:16px 12px}
+  .hdr{flex-direction:column;gap:10px;margin-bottom:20px}
+  .hdr-title{font-size:20px}
+  .hdr-badge{font-size:10px;padding:4px 10px}
+  .hdr-btns{flex-direction:row}
+  .btn-sm{font-size:12px;padding:7px 12px}
+  .tabs{gap:2px;padding:3px}
+  .tab{font-size:12px;padding:7px 10px}
+  .kgrid{grid-template-columns:1fr 1fr;gap:8px}
+  .kcard{padding:12px 14px}
+  .kv{font-size:20px}
+  .kl{font-size:10px}
+  .cbox{padding:14px 12px}
+  .cbox-hd{flex-direction:column;gap:6px}
+  .ctitle{font-size:14px}
+  .legend{gap:10px}
+  .leg{font-size:11px}
+  .two-col,.upd-grid,.upd-layout,.input-grid{grid-template-columns:1fr!important}
+  .sce3{grid-template-columns:1fr!important}
+  table{font-size:11px}
+  th,td{padding:7px 8px}
+  .eps-q-grid{grid-template-columns:repeat(2,1fr)!important}
+  .eps-qval{font-size:18px!important}
+  .tbox{border-radius:8px}
+  .thdr{padding:10px 12px;flex-direction:column;align-items:flex-start;gap:4px}
+  .ttitle{font-size:13px}
+  .tnote{font-size:11px}
+  .upd-card,.input-card{padding:14px}
+  .irow,.frow{gap:6px}
+  .num-in,.finput{width:90px;font-size:12px}
+  .trig-grid{grid-template-columns:1fr!important}
+  .sec-hd{font-size:11px}
+  .sce-row{gap:6px}
+  .sbg .sb{font-size:12px;padding:6px 10px}
+  .sce-desc{font-size:11px}
+}</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- HEADER -->
+<div class="hdr anim">
+  <div>
+    <div class="hdr-badge">漢達生技 6620 · 財務預測模型 v2.7</div>
+    <div class="hdr-title">漢達 <span>Handa Pharma</span> 2026–2028</div>
+    <div class="hdr-sub">資料基準：法說 2026/04/14 · 台新/中信投顧 · 039滲透模型：Logistic S曲線校正（業界24–36月爬坡實證）</div>
+  </div>
+  <div class="hdr-btns">
+    <button class="btn-sm primary" onclick="saveModel()">💾 儲存參數</button>
+    <button class="btn-sm" onclick="exportCSV()">📊 匯出CSV</button>
+    <div style="font-size:12px;color:var(--muted);font-family:var(--mono);padding-top:4px">最後更新：2026/04/17</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab on" onclick="showTab('overview')">📊 總覽</button>
+  <button class="tab" onclick="showTab('eps')">💹 逐季EPS</button>
+  <button class="tab" onclick="showTab('monthly')">📅 逐月預測</button>
+  <button class="tab" onclick="showTab('products')">💊 產品模型</button>
+  <button class="tab" onclick="showTab('update')">🔄 月度更新</button>
+  <button class="tab" onclick="showTab('params')">⚙️ 參數設定</button>
+</div>
+
+<!-- ══════ TAB 1: OVERVIEW ══════ -->
+<div class="panel on" id="tab-overview">
+  <div class="sce-row">
+    <span class="sce-lbl">情境：</span>
+    <div class="sbg">
+      <button class="sb" onclick="setGSce('bear')">保守</button>
+      <button class="sb on" onclick="setGSce('base')">基本</button>
+      <button class="sb" onclick="setGSce('bull')">樂觀</button>
+    </div>
+    <span class="sce-desc" id="sce-desc-g">基本：HND-039 Q4-2026取證授權，Phyrago穩健爬坡</span>
+  </div>
+
+  <div class="kgrid" id="kpi-ov"></div>
+
+  <div class="cbox">
+    <div class="cbox-hd">
+      <div><div class="ctitle">月營收堆疊（2024實際 + 2026–2028預測）</div><div class="csub">NTD百萬 · 深色=實際 淺色=預測</div></div>
+      <div class="legend">
+        <div class="leg"><div class="legdot" style="background:#58a6ff"></div>DLS</div>
+        <div class="leg"><div class="legdot" style="background:#39d0d8"></div>Tascenso</div>
+        <div class="leg"><div class="legdot" style="background:#e3b341"></div>Phyrago</div>
+        <div class="leg"><div class="legdot" style="background:#bc8cff"></div>HND-039</div>
+        <div class="leg"><div class="legdot" style="background:#56d364"></div>其他</div>
+      </div>
+    </div>
+    <div style="height:360px"><canvas id="mainChart"></canvas></div>
+  </div>
+
+  <div class="two-col">
+    <div class="cbox" style="margin-bottom:0">
+      <div class="cbox-hd"><div class="ctitle">年度EPS（歷史+三情境）</div><div class="csub">元/股</div></div>
+      <div style="height:220px"><canvas id="epsAnnualChart"></canvas></div>
+    </div>
+    <div class="cbox" style="margin-bottom:0">
+      <div class="cbox-hd"><div class="ctitle">三情境對比</div></div>
+      <div class="sce3" style="grid-template-columns:1fr;margin-bottom:0" id="sce3-cards"></div>
+    </div>
+  </div>
+
+  <div class="tbox" style="margin-top:20px">
+    <div class="thdr"><div class="ttitle">年度財務摘要（2023–2030）</div><div class="tnote">億NTD · E=預測</div></div>
+    <div class="tscr"><table>
+      <thead><tr>
+        <th style="text-align:left">年度</th>
+        <th>合併營收</th><th style="color:var(--p2)">授權金</th><th>YoY</th>
+        <th>毛利率</th><th>營業利益</th>
+        <th>稅後淨利</th><th>EPS</th><th>來源</th>
+      </tr></thead>
+      <tbody id="annual-tbody"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ══════ TAB 2: EPS QUARTERLY ══════ -->
+<div class="panel" id="tab-eps">
+  <div class="sec-hd">逐季 EPS 預測 · 2026–2028</div>
+
+  <div class="sce-row">
+    <span class="sce-lbl">情境：</span>
+    <div class="sbg">
+      <button class="sb" onclick="setEpsSce('bear')">保守</button>
+      <button class="sb on" onclick="setEpsSce('base')">基本</button>
+      <button class="sb" onclick="setEpsSce('bull')">樂觀</button>
+    </div>
+    <span class="sce-desc" id="sce-desc-eps">基本情境</span>
+  </div>
+
+  <div id="q-cards-2026" style="margin-bottom:20px">
+    <div class="sec-hd" style="font-size:14px;color:var(--text2);letter-spacing:1px">2026年 逐季 EPS</div>
+    <div class="eps-q-grid" id="qcards-2026"></div>
+  </div>
+  <div id="q-cards-2027" style="margin-bottom:20px">
+    <div class="sec-hd" style="font-size:14px;color:var(--text2);letter-spacing:1px">2027年 逐季 EPS</div>
+    <div class="eps-q-grid" id="qcards-2027"></div>
+  </div>
+  <div id="q-cards-2028" style="margin-bottom:20px">
+    <div class="sec-hd" style="font-size:14px;color:var(--text2);letter-spacing:1px">2028年 逐季 EPS</div>
+    <div class="eps-q-grid" id="qcards-2028"></div>
+  </div>
+  <div id="q-cards-2029" style="margin-bottom:20px">
+    <div class="sec-hd" style="font-size:14px;color:var(--text2);letter-spacing:1px">2029年 逐季 EPS</div>
+    <div class="eps-q-grid" id="qcards-2029"></div>
+  </div>
+  <div id="q-cards-2030" style="margin-bottom:20px">
+    <div class="sec-hd" style="font-size:14px;color:var(--text2);letter-spacing:1px">2030年 逐季 EPS</div>
+    <div class="eps-q-grid" id="qcards-2030"></div>
+  </div>
+
+  <div class="cbox">
+    <div class="cbox-hd"><div class="ctitle">逐季EPS走勢（2024Q1–2030Q4）</div><div class="csub">元/股 · 含實際值</div></div>
+    <div style="height:320px"><canvas id="epsQChart"></canvas></div>
+  </div>
+
+  <div class="tbox">
+    <div class="thdr"><div class="ttitle">逐季詳細損益預測</div><div class="tnote">NTD百萬</div></div>
+    <div class="tscr">
+      <table>
+        <thead><tr>
+          <th style="text-align:left">季度</th>
+          <th>DLS</th><th>Tascenso</th><th>Phyrago</th><th>HND-039</th><th style="color:var(--p2)">授權金</th><th>其他</th>
+          <th>合計營收</th><th>毛利率</th><th>稅後淨利</th>
+          <th class="bold" style="color:var(--a2)">EPS</th><th>YoY</th>
+        </tr></thead>
+        <tbody id="eps-q-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Full P&L -->
+  <div class="tbox">
+    <div class="thdr"><div class="ttitle">損益表（年度）</div><div class="tnote">億NTD · 歷史=實際 E=預測</div></div>
+    <div class="tscr"><table>
+      <thead><tr>
+        <th style="text-align:left">項目</th>
+        <th>2024A</th><th>2025A</th><th>2026E</th><th>2027E</th><th>2028E</th><th>2029E</th><th>2030E</th>
+      </tr></thead>
+      <tbody id="pnl-tbody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- 3 Scenario EPS compare -->
+  <div class="tbox">
+    <div class="thdr"><div class="ttitle">三情境 EPS 對比</div><div class="tnote">元/股</div></div>
+    <div class="tscr"><table>
+      <thead><tr>
+        <th style="text-align:left">情境</th>
+        <th>2026Q1</th><th>2026Q2</th><th>2026Q3</th><th>2026Q4</th><th>2026全年</th>
+        <th>2027Q1</th><th>2027Q2</th><th>2027Q3</th><th>2027Q4</th><th>2027全年</th>
+        <th>2028全年</th>
+      </tr></thead>
+      <tbody id="sce3-eps-tbody"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ══════ TAB 3: MONTHLY ══════ -->
+<div class="panel" id="tab-monthly">
+  <div class="sce-row">
+    <span class="sce-lbl">情境：</span>
+    <div class="sbg">
+      <button class="sb" onclick="setMSce('bear')">保守</button>
+      <button class="sb on" onclick="setMSce('base')">基本</button>
+      <button class="sb" onclick="setMSce('bull')">樂觀</button>
+    </div>
+  </div>
+
+  <!-- Actual vs Forecast line chart -->
+  <div class="cbox">
+    <div class="cbox-hd">
+      <div><div class="ctitle">實際月營收 vs 模型預測（2024–2028）</div><div class="csub">NTD百萬 · 實色柱=實際公告 淺色柱=預測 折線=預測趨勢</div></div>
+      <div class="legend">
+        <div class="leg"><div class="legdot" style="background:#56d364"></div>實際（公告）</div>
+        <div class="leg"><div class="legdot" style="background:#58a6ff;opacity:.5"></div>預測</div>
+        <div class="leg"><div class="legdot" style="background:#e3b341"></div>預測趨勢線</div>
+      </div>
+    </div>
+    <div style="height:300px"><canvas id="mActualFcstChart"></canvas></div>
+  </div>
+
+  <!-- Quick accuracy KPIs for known months -->
+  <div id="monthly-acc-kpis" style="margin-bottom:20px"></div>
+
+  <!-- Stacked forecast only chart -->
+  <div class="cbox">
+    <div class="cbox-hd">
+      <div><div class="ctitle">月營收產品結構（2026–2028 預測）</div><div class="csub">NTD百萬 · 各產品堆疊</div></div>
+      <div class="legend">
+        <div class="leg"><div class="legdot" style="background:#58a6ff"></div>DLS</div>
+        <div class="leg"><div class="legdot" style="background:#39d0d8"></div>Tascenso</div>
+        <div class="leg"><div class="legdot" style="background:#e3b341"></div>Phyrago</div>
+        <div class="leg"><div class="legdot" style="background:#bc8cff"></div>HND-039</div>
+        <div class="leg"><div class="legdot" style="background:#56d364"></div>其他</div>
+      </div>
+    </div>
+    <div style="height:280px"><canvas id="mStackChart"></canvas></div>
+  </div>
+
+  <!-- Full table with actual vs forecast -->
+  <div class="tbox">
+    <div class="thdr">
+      <div class="ttitle">逐月明細 · 實際 vs 預測（全覽）</div>
+      <div class="tnote" style="display:flex;gap:10px;align-items:center">
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;background:#56d364;border-radius:2px"></span>已公告實際</span>
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;background:#58a6ff;opacity:.5;border-radius:2px"></span>模型預測</span>
+        NTD千元
+      </div>
+    </div>
+    <div class="tscr">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left">月份</th>
+            <th style="color:#56d364">實際合計</th>
+            <th>預測合計</th>
+            <th>誤差率</th>
+            <th style="border-left:1px solid var(--b2);color:rgba(88,166,255,.8)">DLS預測</th>
+            <th style="color:rgba(57,208,216,.8)">Tascenso預測</th>
+            <th style="color:rgba(227,179,65,.8)">Phyrago預測</th>
+            <th style="color:rgba(188,140,255,.8)">039預測</th>
+            <th>YoY</th><th>MoM</th><th>狀態</th>
+          </tr>
+        </thead>
+        <tbody id="monthly-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ TAB 4: PRODUCTS ══════ -->
+<div class="panel" id="tab-products">
+  <div class="sec-hd">個別產品模型</div>
+
+  <div class="two-col">
+    <div class="cbox" style="margin-bottom:0">
+      <div class="cbox-hd"><div><div class="ctitle" style="color:var(--c2)">DLS · Dexlansoprazole</div><div class="csub">高技術門檻學名藥 · 衰退型 · Alembic 2026競爭</div></div></div>
+      <div style="height:180px"><canvas id="dlsChart"></canvas></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">
+        <div class="kcard" style="--kc:var(--c1);padding:12px"><div class="kl" style="font-size:10px">2025A</div><div class="kv" style="font-size:18px">7.0億</div></div>
+        <div class="kcard" style="--kc:var(--r1);padding:12px"><div class="kl" style="font-size:10px">2026E</div><div class="kv" style="font-size:18px;color:var(--r2)">5.7億</div></div>
+        <div class="kcard" style="--kc:var(--r1);padding:12px"><div class="kl" style="font-size:10px">2027E</div><div class="kv" style="font-size:18px;color:var(--r2)">4.5億</div></div>
+      </div>
+    </div>
+    <div class="cbox" style="margin-bottom:0">
+      <div class="cbox-hd"><div><div class="ctitle" style="color:var(--t2)">Tascenso ODT · HND-020</div><div class="csub">505(b)(2) · 穩健成長 · 市占5.01% · 專利2038</div></div></div>
+      <div style="height:180px"><canvas id="tascChart"></canvas></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">
+        <div class="kcard" style="--kc:var(--t1);padding:12px"><div class="kl" style="font-size:10px">2025A</div><div class="kv" style="font-size:18px;color:var(--t2)">2.6億</div></div>
+        <div class="kcard" style="--kc:var(--g1);padding:12px"><div class="kl" style="font-size:10px">2026E</div><div class="kv" style="font-size:18px;color:var(--g2)">3.2億</div></div>
+        <div class="kcard" style="--kc:var(--g1);padding:12px"><div class="kl" style="font-size:10px">2027E</div><div class="kv" style="font-size:18px;color:var(--g2)">4.0億</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-top:16px">
+    <div class="cbox" style="margin-bottom:0">
+      <div class="cbox-hd"><div><div class="ctitle" style="color:var(--a2)">Phyrago™ · HND-051</div><div class="csub">505(b)(2) · Mar-26起正常認列 · NCCN收載</div></div></div>
+      <div style="height:180px"><canvas id="phyChart"></canvas></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">
+        <div class="kcard" style="--kc:var(--a1);padding:12px"><div class="kl" style="font-size:10px">2025（含授權）</div><div class="kv" style="font-size:18px;color:var(--a2)">7.3億</div></div>
+        <div class="kcard" style="--kc:var(--a1);padding:12px"><div class="kl" style="font-size:10px">2026E純分潤</div><div class="kv" style="font-size:18px;color:var(--a2)">~1.4億</div></div>
+        <div class="kcard" style="--kc:var(--a1);padding:12px"><div class="kl" style="font-size:10px">2027E</div><div class="kv" style="font-size:18px;color:var(--a2)">~3.5億</div></div>
+      </div>
+    </div>
+    <div class="trigger-box" style="margin-bottom:0">
+      <div class="trig-title">🔬 HND-039 · Cabozantinib 改良新藥</div>
+      <div class="trig-grid">
+        <div class="trig-item"><strong>PDUFA 日期</strong>2026年7月29日</div>
+        <div class="trig-item"><strong>目標市場</strong>$21.1億USD（Cabometyx）</div>
+        <div class="trig-item"><strong>法律風險</strong>Exelixis未提起P-IV訴訟</div>
+        <div class="trig-item"><strong>空窗期</strong>2026–2030學名藥難進入</div>
+        <div class="trig-item"><strong>商業模式</strong>授權+分潤（基本）</div>
+        <div class="trig-item"><strong>台新預估2027</strong>19.4億NTD（30%分潤）</div>
+      </div>
+      <div style="margin-top:14px;height:160px"><canvas id="hnd039Chart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ TAB 5: UPDATE ══════ -->
+<div class="panel" id="tab-update">
+  <div class="sec-hd">實際 vs 模型預測 · 逐月對照</div>
+
+  <!-- Input row -->
+  <div style="display:grid;grid-template-columns:360px 1fr;gap:16px;margin-bottom:20px" class="upd-layout">
+    <div class="upd-card">
+      <div class="upd-title">📥 新增月營收公告</div>
+      <div class="irow"><label>月份（YYYY/MM）</label><input class="num-in" id="upd_month" type="text" placeholder="2026/04" style="width:120px"></div>
+      <div style="height:1px;background:var(--b1);margin:10px 0"></div>
+      <div class="irow"><label style="color:var(--text);font-weight:600">合計月營收（NTD千元）</label><input class="num-in" id="upd_total" type="number" placeholder="75000"></div>
+      <div style="font-size:12px;color:var(--muted);margin:6px 0 10px;font-family:var(--mono)">各產品拆解（選填，不填以模型比例推算）</div>
+      <div class="irow"><label><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#58a6ff;margin-right:6px;vertical-align:middle"></span>DLS（千元）</label><input class="num-in" id="upd_dls" type="number" placeholder="自動推算"></div>
+      <div class="irow"><label><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#39d0d8;margin-right:6px;vertical-align:middle"></span>Tascenso（千元）</label><input class="num-in" id="upd_tasc" type="number" placeholder="自動推算"></div>
+      <div class="irow"><label><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e3b341;margin-right:6px;vertical-align:middle"></span>Phyrago（千元）</label><input class="num-in" id="upd_phy" type="number" placeholder="自動推算"></div>
+      <div class="irow"><label><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#56d364;margin-right:6px;vertical-align:middle"></span>其他（千元）</label><input class="num-in" id="upd_other" type="number" placeholder="自動推算"></div>
+      <div style="font-size:11px;color:var(--g2);font-family:var(--mono);margin-top:10px;padding:8px 10px;background:rgba(86,211,100,.06);border:1px solid rgba(86,211,100,.2);border-radius:6px">
+        ✓ 加入後自動同步至「逐月預測」頁面實際值欄位
+      </div>
+      <button class="act-btn" onclick="addActualAndRefresh()" style="margin-top:10px">✅ 加入 · 同步所有頁面</button>
+      <button class="act-btn" onclick="clearActuals()" style="margin-top:8px;background:rgba(248,81,73,.08);border-color:rgba(248,81,73,.25);color:var(--r2)">🗑 清除所有記錄</button>
+    </div>
+    <div id="latest-card" style="display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:13px;color:var(--muted);font-family:var(--mono);padding:20px;background:var(--s1);border:1px solid var(--b1);border-radius:10px;height:100%;display:flex;align-items:center;justify-content:center">
+        👈 輸入實際月營收後，此處顯示本月各產品實際 vs 預測對照卡片
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart: actual vs forecast total -->
+  <div class="cbox" id="upd-chart-box" style="display:none">
+    <div class="cbox-hd">
+      <div><div class="ctitle">實際 vs 預測 · 月營收走勢</div><div class="csub">NTD百萬 · 實線=實際 虛線=模型預測</div></div>
+      <div class="legend">
+        <div class="leg"><div class="legdot" style="background:#56d364"></div>實際總計</div>
+        <div class="leg"><div class="legdot" style="background:#58a6ff;border:2px dashed #58a6ff;background:none"></div>模型預測</div>
+      </div>
+    </div>
+    <div style="height:260px"><canvas id="updTotalChart"></canvas></div>
+  </div>
+
+  <!-- Product bar chart for latest month -->
+  <div class="cbox" id="upd-prod-chart-box" style="display:none">
+    <div class="cbox-hd">
+      <div><div class="ctitle" id="upd-prod-title">最新月份各產品：實際 vs 預測</div><div class="csub">NTD千元</div></div>
+    </div>
+    <div style="height:220px"><canvas id="updProdChart"></canvas></div>
+  </div>
+
+  <!-- Full comparison table -->
+  <div class="tbox">
+    <div class="thdr">
+      <div class="ttitle">📊 全覽對照表 · 實際 vs 各產品模型預測</div>
+      <div class="tnote">NTD千元 · 綠=公告實際 黃=估算拆解 灰=模型預測</div>
+    </div>
+    <div class="tscr">
+      <table id="full-compare-table">
+        <thead>
+          <tr>
+            <th style="text-align:left;min-width:80px">月份</th>
+            <!-- DLS -->
+            <th colspan="3" style="text-align:center;background:rgba(88,166,255,.08);border-left:2px solid rgba(88,166,255,.3)">DLS</th>
+            <!-- Tascenso -->
+            <th colspan="3" style="text-align:center;background:rgba(57,208,216,.06);border-left:2px solid rgba(57,208,216,.3)">Tascenso</th>
+            <!-- Phyrago -->
+            <th colspan="3" style="text-align:center;background:rgba(227,179,65,.06);border-left:2px solid rgba(227,179,65,.3)">Phyrago</th>
+            <!-- Total -->
+            <th colspan="4" style="text-align:center;background:rgba(255,255,255,.03);border-left:2px solid var(--b2)">合計</th>
+          </tr>
+          <tr>
+            <th style="text-align:left"></th>
+            <th style="background:rgba(88,166,255,.06);border-left:2px solid rgba(88,166,255,.2)">實際/估</th>
+            <th style="background:rgba(88,166,255,.06)">預測</th>
+            <th style="background:rgba(88,166,255,.06)">誤差</th>
+            <th style="background:rgba(57,208,216,.04);border-left:2px solid rgba(57,208,216,.2)">實際/估</th>
+            <th style="background:rgba(57,208,216,.04)">預測</th>
+            <th style="background:rgba(57,208,216,.04)">誤差</th>
+            <th style="background:rgba(227,179,65,.04);border-left:2px solid rgba(227,179,65,.2)">實際/估</th>
+            <th style="background:rgba(227,179,65,.04)">預測</th>
+            <th style="background:rgba(227,179,65,.04)">誤差</th>
+            <th style="border-left:2px solid var(--b1)">實際</th>
+            <th>預測</th>
+            <th>誤差率</th>
+            <th>信號</th>
+          </tr>
+        </thead>
+        <tbody id="full-compare-tbody">
+          <tr><td colspan="14" style="text-align:center;color:var(--muted);padding:28px;font-size:14px">尚未輸入任何實際月營收資料。<br>請在左側輸入框輸入每月公告數字後按「加入」。</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Cumulative error trend -->
+  <div class="cbox" id="upd-err-box" style="display:none">
+    <div class="cbox-hd">
+      <div><div class="ctitle">誤差趨勢 · 各產品累積偏差方向</div><div class="csub">持續同向偏差 → 需調整模型參數</div></div>
+    </div>
+    <div style="height:200px"><canvas id="updErrChart"></canvas></div>
+    <div id="calibrate-hints" style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px"></div>
+  </div>
+</div>
+
+<!-- ══════ TAB 6: PARAMS ══════ -->
+<div class="panel" id="tab-params">
+  <div class="sec-hd">假設參數設定</div>
+  <div class="input-grid">
+    <div class="input-card">
+      <div class="input-title"><div class="idot" style="background:var(--c2)"></div>費用結構</div>
+      <div class="frow"><span class="flabel">營業費用率（%營收）</span><input class="finput" id="opex_rate" type="number" value="32" step="1" onchange="updateParam('opex',this.value,100)"></div>
+      <div class="frow"><span class="flabel">Xspray分潤（Phyrago %）</span><input class="finput" id="xspray_rate" type="number" value="12" step="1" onchange="refreshAll()"></div>
+      <div class="frow"><span class="flabel">有效稅率（%）</span><input class="finput" id="tax_rate" type="number" value="20" step="1" onchange="updateParam('tax',this.value,100)"></div>
+      <div class="frow"><span class="flabel">股本（億股）</span><input class="finput" id="shares" type="number" value="1.7" step="0.01" onchange="updateParam('sh',this.value)"></div>
+    </div>
+    <div class="input-card">
+      <div class="input-title"><div class="idot" style="background:var(--a2)"></div>毛利率假設</div>
+      <div class="frow"><span class="flabel">DLS 毛利率（%）</span><input class="finput" id="dls_gm" type="number" value="99" step="1" onchange="updateParam('dls_gm',this.value,100)"></div>
+      <div class="frow"><span class="flabel">Tascenso 毛利率（%）</span><input class="finput" id="tasc_gm" type="number" value="99" step="1" onchange="updateParam('tasc_gm',this.value,100)"></div>
+      <div class="frow"><span class="flabel">Phyrago 毛利率（%）</span><input class="finput" id="phy_gm" type="number" value="87" step="1" onchange="updateParam('phy_gm',this.value,100)"></div>
+      <div class="frow"><span class="flabel">HND-039 毛利率（%）</span><input class="finput" id="h039_gm" type="number" value="99" step="1" onchange="updateParam('h039_gm',this.value,100)"></div>
+    </div>
+    <div class="input-card">
+      <div class="input-title"><div class="idot" style="background:var(--p2)"></div>HND-039 市場模型</div>
+      <div class="frow"><span class="flabel">取證時間（PDUFA）</span>
+        <select class="fselect" id="h039_timing" onchange="setTimeout(()=>{try{refreshAll();}catch(e){}},30)">
+          <option value="2026Q2">2026 Q2（PDUFA提前）</option>
+          <option value="2026Q3" selected>2026 Q3（基本 · PDUFA 7/29）</option>
+          <option value="2026Q4">2026 Q4（延後1季）</option>
+          <option value="2027Q1">2027 Q1（保守）</option>
+          <option value="2027Q2">2027 Q2（悲觀）</option>
+          <option value="2027Q3">2027 Q3（極保守）</option>
+          <option value="none">未取證（不計入）</option>
+        </select>
+      </div>
+      <div class="frow"><span class="flabel">目標市占（%，高原）</span><input class="finput" id="h039_ms" type="number" value="8" step="1" onchange="setTimeout(()=>{try{refreshAll();}catch(e){}},30)"></div>
+      <div class="frow"><span class="flabel">分潤/授權率（%）</span><input class="finput" id="h039_rate" type="number" value="30" step="1" onchange="setTimeout(()=>{try{refreshAll();}catch(e){}},30)"></div>
+      <div class="frow"><span class="flabel">USD/NTD匯率</span><input class="finput" id="usd_ntd" type="number" value="32" step="0.5" onchange="setTimeout(()=>{try{refreshAll();}catch(e){}},30)"></div>
+      <div id="h039-calc-hint" style="margin-top:10px;font-size:11px;color:var(--muted);font-family:var(--mono);background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:8px 10px;line-height:1.7"></div>
+    </div>
+  </div>
+
+  <div class="tbox">
+    <div class="thdr"><div class="ttitle">歷史月營收（校正基礎）</div><div class="tnote">NTD千元</div></div>
+    <div class="tscr"><table>
+      <thead><tr><th style="text-align:left">月份</th><th>實際月營收</th><th>YoY</th><th>MoM</th><th>主要事件</th></tr></thead>
+      <tbody id="hist-tbody"></tbody>
+    </table></div>
+  </div>
+
+  <div class="tbox">
+    <div class="thdr"><div class="ttitle">投顧預測對比</div></div>
+    <div class="tscr"><table>
+      <thead><tr><th style="text-align:left">機構</th><th>評等</th><th>目標價</th><th>2026E EPS</th><th>2027E EPS</th><th>039假設</th><th>Phyrago 2026</th></tr></thead>
+      <tbody>
+        <tr><td><span class="bold ca">台新投顧</span> 2026/04/10</td><td><span class="flag flag-a">強力買進</span></td><td>114元</td><td>4.01元</td><td class="bold cg">11.39元</td><td>3Q26取證，分潤30%，市占12%</td><td>1.7億NTD</td></tr>
+        <tr><td><span class="bold cc">中信投顧</span> 2026/04/15</td><td><span class="flag flag-r">中立</span></td><td>73元</td><td>4.30元</td><td class="neg">2.88元</td><td>授權模式，不確定性高</td><td>1.0億NTD</td></tr>
+        <tr><td><span class="bold ca">本模型（基本）</span></td><td>—</td><td>—</td><td id="model-eps26" class="bold ca">—</td><td id="model-eps27" class="bold ca">—</td><td>4Q26取證，授權分潤</td><td>~1.4億NTD</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="foot">
+    ⚠ 本模型為研究用財務分析工具，非投資建議。HND-039取證與商業化為最大不確定性來源。<br>
+    資料來源：漢達法說 2026/04/14 · 台新投顧 2026/04/10 · 中信投顧 2026/04/15 · HiStock月營收公告
+  </div>
+</div>
+
+</div><!-- /shell -->
+
+<script>
+// ═══════════════════════════════════════════
+// CORE DATA
+// ═══════════════════════════════════════════
+const HIST = [
+  {y:2024,m:1,rev:87689,yoy:26.3,mom:-23.0},{y:2024,m:2,rev:70652,yoy:-53.8,mom:-19.4},
+  {y:2024,m:3,rev:59156,yoy:-45.6,mom:-16.3},{y:2024,m:4,rev:72445,yoy:17.0,mom:22.5},
+  {y:2024,m:5,rev:88840,yoy:-0.2,mom:22.6},{y:2024,m:6,rev:84109,yoy:7.3,mom:14.3},
+  {y:2024,m:7,rev:80745,yoy:-6.2,mom:-4.0},{y:2024,m:8,rev:65016,yoy:-29.4,mom:-19.5},
+  {y:2024,m:9,rev:63993,yoy:13.3,mom:-1.6},{y:2024,m:10,rev:65141,yoy:-21.6,mom:1.8},
+  {y:2024,m:11,rev:55918,yoy:-39.4,mom:-14.1},{y:2024,m:12,rev:66261,yoy:-41.8,mom:18.5},
+  {y:2025,m:1,rev:57275,yoy:-34.7,mom:-13.6},{y:2025,m:2,rev:52748,yoy:-25.3,mom:-7.9},
+  {y:2025,m:3,rev:70920,yoy:19.9,mom:34.5},
+  {y:2025,m:4,rev:175364,yoy:203.4,mom:147.3,note:'Phyrago簽約金+保底金入帳'},
+  {y:2025,m:5,rev:94211,yoy:28.0,mom:-46.3},{y:2025,m:6,rev:103417,yoy:23.0,mom:9.8},
+  {y:2025,m:7,rev:69251,yoy:-14.2,mom:-33.0},
+  {y:2025,m:8,rev:332141,yoy:410.9,mom:379.6,note:'Phyrago$5.67億授權金入帳'},
+  {y:2025,m:9,rev:88141,yoy:37.7,mom:-73.5},
+  {y:2025,m:10,rev:87576,yoy:34.4,mom:-0.6,note:'Phyrago美國上市'},
+  {y:2025,m:11,rev:75804,yoy:35.6,mom:-13.4},{y:2025,m:12,rev:136813,yoy:106.5,mom:80.5},
+  {y:2026,m:1,rev:75690,yoy:32.2,mom:-44.7},{y:2026,m:2,rev:54974,yoy:4.2,mom:-27.4},
+  {y:2026,m:3,rev:78718,yoy:11.0,mom:43.2,note:'Phyrago正常認列開始'},
+];
+
+// Historical Q EPS (actual)
+const HIST_Q_EPS = {
+  '2024Q1':0.62,'2024Q2':1.12,'2024Q3':1.34,'2024Q4':1.09,
+  '2025Q1':0.51,'2025Q2':1.91,'2025Q3':1.34,'2025Q4':1.09,
+};
+
+let userActuals = [];
+let gSce = 'base', mSce = 'base', epsSce = 'base';
+const MN=['','1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const CHARTS = {};
+const SCE_DESC = {
+  bear:'保守：039 2027/Q1取證，Phyrago緩慢爬坡，DLS承壓',
+  base:'基本：HND-039 Q4-2026取證授權，Phyrago穩健爬坡',
+  bull:'樂觀：039 Q3-2026取證+快速放量，Phyrago市占達5%'
+};
+
+// ═══════════════════════════════════════════
+// PARAMS — 用 JS 物件儲存，不依賴 DOM
+// ═══════════════════════════════════════════
+const PARAMS = {
+  opex: 0.32, tax: 0.20, sh: 1.70,
+  dls_gm: 0.99, tasc_gm: 0.99, phy_gm: 0.87, h039_gm: 0.99,
+  usd: 32
+};
+
+// P() 直接讀 PARAMS 物件，確保數值穩定
+const P = () => ({ ...PARAMS });
+
+// DOM input 改變時更新 PARAMS
+function updateParam(key, rawVal, divisor) {
+  const v = parseFloat(rawVal);
+  if (!isNaN(v) && v > 0) PARAMS[key] = divisor ? v / divisor : v;
+  refreshAll();
+}
+
+// ═══════════════════════════════════════════
+// MONTHLY FORECAST ENGINE — 校正後版本
+// ═══════════════════════════════════════════
+/*
+校正依據（2026 Q1 實際）：
+  合計 Q1=75690+54974+78718=209,382K NTD
+  DLS Q1=1.1億 → 月均 36,667K（中信：YoY-53.9%但是vs含授權金高基期，DLS本身約維持）
+  Tascenso Q1=0.79億 → 月均 26,333K（中信確認 YoY+109%）
+  Phyrago Q1≈0.06億 → 月均約 2,000K（3月才開始，Q1極少）
+  其他（Varenicline等）Q1≈0.025億 → 月均 833K
+
+各產品2025全年（台新/法說）：
+  DLS:  7.0億 → 月均 58,333K → Q1實際36,667K代表已腰斬（Alembic競爭+季節）
+  Tascenso: 2.6億 → 月均 21,667K → Q1已成長至26,333K
+  Phyrago: 7.3億但含簽約金，純分潤部分微小
+
+Phyrago 純分潤換算（修正）：
+  台新估2026全年1.7億NTD → 月均14,167K
+  Mar-26起線性爬升，peak約Q4-2026到Q1-2027
+  起點（Mar-26）≈2,000~3,000K NTD/月（不是USD！）
+  
+HND-039（修正）：
+  台新估2026貢獻3.3億NTD（Q4開始），2027全年19.4億NTD
+  Q4-2026: 約1億/月（僅2-3個月）
+  2027月均: 19.4億/12 = 16,167K NTD/月
+  峰值不超過25,000K NTD/月（台新最樂觀估）
+
+DLS 衰退：
+  從Q1-26基準36,667K，台新估全年5.7億=月均47,500K（Q1偏低因假期）
+  正確做法：先從36,667K緩步回升至Q2-Q3的~50,000K，再按-15%/年衰退
+  Alembic 2026年甫進場，影響從下半年開始明顯
+*/
+function getMonthly(sce='base') {
+  const p = P();
+  const rows = [];
+
+  // ── 情境參數（單位全部 NTD K/月）──
+  //
+  // HND-039 滲透模型（業界實證修正）：
+  //   腫瘤科專科藥上市 → 高原通常需 3-5年（McKinsey）
+  //   505(b)(2)改良劑型較快，但腫瘤科保險審核/prior auth 至少需 24-36個月
+  //   基本情境：取證後 30個月才達目標市占高原（比台新假設慢，但更合理）
+  //   每月分潤 = $21.1億 × 市占% × 分潤率% ÷ 12 × 匯率32
+  //   8%市占 + 30%分潤 = 月高原 = 2110×0.08×0.30/12×32000 = 135,040K NTD
+  //
+  // 取證時間由使用者在「參數設定」頁控制（h039_timing）
+  // 爬坡速度：使用 S 型曲線（sigmoid），模擬保險給付逐步擴大過程
+
+  // 讀取使用者設定的取證時間，轉成 mo 索引（0=2026/01）
+  const timingMap = {
+    '2026Q2': 3,   // 2026/04
+    '2026Q3': 6,   // 2026/07 (PDUFA date)
+    '2026Q4': 9,   // 2026/10
+    '2027Q1': 12,  // 2027/01
+    '2027Q2': 15,  // 2027/04
+    '2027Q3': 18,  // 2027/07
+    'none':   999, // 未取證
+  };
+  const timingEl = document.getElementById('h039_timing');
+  const h039TimingKey = timingEl ? timingEl.value : '2026Q4';
+  const h039StartMo = timingMap[h039TimingKey] ?? 9;
+
+  // 從參數設定讀取市占與分潤率
+  const h039_ms_pct  = (parseFloat(document.getElementById('h039_ms')?.value)   || 8)  / 100;
+  const h039_rate_pct= (parseFloat(document.getElementById('h039_rate')?.value) || 30) / 100;
+  const usd_rate     = (parseFloat(document.getElementById('usd_ntd')?.value)   || 32);
+
+  // 月高原值（NTD K）= $21.1億USD × 市占% × 分潤率% ÷ 12個月 × 匯率 × 1000
+  const CABO_US_M = 2110; // Cabometyx 美國市場 M USD
+  const h039PeakK = Math.round(CABO_US_M * h039_ms_pct * h039_rate_pct / 12 * usd_rate * 1000);
+
+  // ── S 型滲透曲線（業界實證校正）──
+  // 腫瘤科專科藥上市後爬坡特性（McKinsey + 實際藥品數據）：
+  //   取證後第1–3個月：保險審核/prior auth lag，幾乎無銷售（<5%）
+  //   第4–12個月：小型商業保險先納入，緩慢起步（5–20%）
+  //   第12–24個月：大型PBM（ESI/CVS）納入，加速期（20–60%）
+  //   第24–36個月：Medicare/Medicaid完整覆蓋，趨近高原
+  // 參考案例：Cabometyx 2016上市，2019年達高原（約3年）
+  //            Bendeka（505b2改良）1.5–2年達高原（因有現成通路）
+  // HND-039為改良劑型（非全新機制）+ 已有Exelixis通路合作，
+  //   預估比全新藥快，但比Bendeka慢（腫瘤科prior auth複雜）
+  // 三情境中點（取證後第幾個月是爬坡中段）：
+  //   保守：第22個月（約1.8年，反映Medicare納入慢）
+  //   基本：第18個月（約1.5年，主流商業保險到位）
+  //   樂觀：第14個月（約1.2年，NCCN加持+快速prior auth）
+  const midMap = { bear: 22, base: 18, bull: 14 };
+  const slopMap = { bear: 0.22, base: 0.26, bull: 0.30 }; // 陡峭度
+  const mid  = midMap[sce];
+  const slop = slopMap[sce];
+
+  function h039ForMo(mo) {
+    if (mo < h039StartMo || h039StartMo === 999) return 0;
+    const t = mo - h039StartMo; // 取證後第幾個月
+    // Logistic S 曲線
+    const sigmoid = 1 / (1 + Math.exp(-slop * (t - mid)));
+    // 前3個月 lag：prior auth 申請期，限制在5%以下
+    const lagFactor = t < 3 ? (t / 3) * 0.05 : sigmoid;
+    return Math.round(h039PeakK * Math.min(1, lagFactor));
+  }
+
+  const cfg = {
+    bear: {
+      dlsQ:  [36667, 47000, 47000, 44000,  // 2026
+               38000, 41000, 41000, 36000,  // 2027
+               30000, 33000, 33000, 28000,  // 2028
+               23000, 25000, 25000, 22000,  // 2029
+               18000, 20000, 20000, 18000], // 2030（仿製藥侵蝕加劇）
+      tascQ: [26333, 27500, 28500, 29000,
+               29500, 30000, 30500, 31000,
+               31000, 31000, 31000, 31000,
+               30500, 30500, 30000, 30000,  // 2029：微幅穩定
+               29500, 29500, 29000, 29000], // 2030
+      phyByMo:[0,0,1500,2000, 3000,4000,5000,6000, 7000,8000,9000,10000,
+               11000,12000,13000,14000, 15000,15500,16000,16000, 16000,16000,16000,16000,
+               16000,16000,16000,15500, 15000,14500,14000,13500, 13000,12500,12000,11500,
+               11000,10500,10000,9500,  9000, 8500, 8000, 7500,  7000, 6500, 6000, 5500],
+      others: 1500,
+    },
+    base: {
+      dlsQ:  [36667, 49000, 49000, 46000,
+               40000, 43000, 43000, 38000,
+               32000, 35000, 35000, 30000,
+               26000, 28000, 28000, 25000,  // 2029
+               21000, 23000, 23000, 20000], // 2030
+      tascQ: [26333, 29000, 31000, 33000,
+               34000, 35500, 36500, 37000,
+               37000, 37000, 37000, 37000,
+               37000, 37000, 37000, 37000,  // 2029：維持高原
+               36500, 36500, 36000, 36000], // 2030
+      phyByMo:[0,0,2500,4000, 6000,8000,10000,12000, 14000,15500,17000,18000,
+               19000,20000,21000,22000, 23000,23500,24000,24000, 24000,24000,24000,24000,
+               24000,24000,24000,24000, 24000,23500,23000,22500, 22000,21500,21000,20500,
+               20000,19500,19000,18500, 18000,17500,17000,16500, 16000,15500,15000,14500],
+      others: 2000,
+    },
+    bull: {
+      dlsQ:  [36667, 50000, 51000, 48000,
+               44000, 47000, 48000, 43000,
+               36000, 39000, 39000, 35000,
+               30000, 33000, 33000, 30000,  // 2029
+               25000, 27000, 27000, 24000], // 2030
+      tascQ: [26333, 30000, 33000, 35000,
+               37000, 39000, 40500, 42000,
+               42000, 42000, 42000, 42000,
+               42000, 42000, 42000, 42000,  // 2029：高原維持
+               41500, 41500, 41000, 41000], // 2030
+      phyByMo:[0,0,3000,6000, 9000,12000,15000,18000, 21000,23000,25000,27000,
+               28000,30000,32000,33000, 34000,35000,36000,36000, 36000,36000,36000,36000,
+               36000,36000,36000,36000, 36000,35500,35000,34500, 34000,33500,33000,32500,
+               32000,31500,31000,30500, 30000,29500,29000,28500, 28000,27500,27000,26500],
+      others: 2500,
+    },
+  }[sce];
+
+  // ── HND-039 授權金結構（一次性入帳，不含入月分潤）──
+  // 業界慣例（已取證/近取證資產）：
+  //   簽約金（upfront）：$20–40M USD，合約簽署月一次性認列
+  //   取證里程碑：$10–20M USD，FDA核准後認列
+  //   銷售里程碑：$20–50M USD，累計銷售達門檻後認列
+  // 三情境假設：
+  //   保守：簽約金$15M + 取證$8M + 銷售里程碑$15M（合計$38M）
+  //   基本：簽約金$25M + 取證$12M + 銷售里程碑$25M（合計$62M）
+  //   樂觀：簽約金$35M + 取證$18M + 銷售里程碑$40M（合計$93M）
+  const licsCfg = {
+    bear: { upfront: 15, approval: 8,  milestones: [{salesThresM: 50, payM: 8}, {salesThresM: 100, payM: 7}] },
+    base: { upfront: 25, approval: 12, milestones: [{salesThresM: 50, payM: 10},{salesThresM: 150, payM: 15}] },
+    bull: { upfront: 35, approval: 18, milestones: [{salesThresM: 80, payM: 15},{salesThresM: 200, payM: 25}] },
+  }[sce];
+
+  // 簽約時間：假設 PDUFA 前3個月簽約（如 PDUFA=2026Q3 mo6，則簽約在 mo3=2026Q2）
+  const contractMo = Math.max(0, h039StartMo - 3); // 提前3個月簽約
+  const approvalMo = h039StartMo;  // 取證里程碑在取證當月
+
+  // 計算累計銷售並觸發銷售里程碑
+  let cumSalesM = 0;
+  const milestonesTriggered = new Set();
+
+  function h039LicsForMo(mo, h039SalesKThisMo) {
+    if (h039StartMo === 999) return 0;
+    let lics = 0;
+    const usd = parseFloat(document.getElementById('usd_ntd')?.value) || 32;
+    // 簽約金
+    if (mo === contractMo) lics += licsCfg.upfront * usd * 1000; // M USD → NTD K
+    // 取證里程碑
+    if (mo === approvalMo) lics += licsCfg.approval * usd * 1000;
+    // 銷售里程碑（累計銷售達門檻）
+    cumSalesM += h039SalesKThisMo / usd / 1000; // K NTD → M USD
+    for (const ms of licsCfg.milestones) {
+      if (!milestonesTriggered.has(ms.salesThresM) && cumSalesM >= ms.salesThresM) {
+        lics += ms.payM * usd * 1000;
+        milestonesTriggered.add(ms.salesThresM);
+      }
+    }
+    return Math.round(lics);
+  }
+
+  // 把季均展開成月
+  function qToMonths(qArr) {
+    const out = [];
+    for (let i = 0; i < qArr.length; i++) out.push(qArr[i], qArr[i], qArr[i]);
+    return out; // 12 months per year × 5 years = 60
+  }
+  const dlsMonths  = qToMonths(cfg.dlsQ);
+  const tascMonths = qToMonths(cfg.tascQ);
+
+  for (let mo = 0; mo < 60; mo++) {
+    const yi    = Math.floor(mo / 12);
+    const mi    = mo % 12;
+    const year  = 2026 + yi;
+    const month = mi + 1;
+    const key   = `${year}/${String(month).padStart(2,'0')}`;
+
+    const dls    = Math.round(dlsMonths[mo]);
+    const tasc   = Math.round(tascMonths[mo]);
+    const phy    = Math.round(cfg.phyByMo[mo] || 0);
+    const h039   = Math.round(h039ForMo(mo));
+    const others = cfg.others;
+    const lics   = h039LicsForMo(mo, h039);  // 授權金（一次性，不計入 total）
+    const total  = dls + tasc + phy + h039 + others;
+
+    const histM    = HIST.find(h => h.y === year && h.m === month);
+    const hist2025 = HIST.find(h => h.y === year - 1 && h.m === month);
+    const yoy  = hist2025 ? ((total / hist2025.rev - 1) * 100) : null;
+    const prev = rows[rows.length - 1];
+    const mom  = prev ? ((total / prev.total - 1) * 100) : null;
+
+    rows.push({ year, month, key, mo, dls, tasc, phy, h039, others, total, lics, yoy, mom,
+      actual: histM?.rev || null, isActual: !!histM });
+  }
+  return rows;
+}
+
+// ═══════════════════════════════════════════
+// QUARTERLY AGGREGATOR
+// ═══════════════════════════════════════════
+function getQuarterly(sce='base') {
+  const p=P();
+  const monthly=getMonthly(sce);
+  const qrows=[];
+  for(let yi=0;yi<5;yi++){
+    for(let qi=0;qi<4;qi++){
+      const year=2026+yi;
+      const qLabel=`${year}Q${qi+1}`;
+      const months=monthly.filter(r=>r.year===year&&r.month>=qi*3+1&&r.month<=qi*3+3);
+      const dls=months.reduce((s,r)=>s+r.dls,0);
+      const tasc=months.reduce((s,r)=>s+r.tasc,0);
+      const phy=months.reduce((s,r)=>s+r.phy,0);
+      const h039=months.reduce((s,r)=>s+r.h039,0);
+      const others=months.reduce((s,r)=>s+r.others,0);
+      const lics=months.reduce((s,r)=>s+(r.lics||0),0);
+      const rev=months.reduce((s,r)=>s+r.total,0);
+      const revTotal=rev+lics; // 含授權金的總認列營收
+      const gm=dls*p.dls_gm+tasc*p.tasc_gm+phy*p.phy_gm+h039*p.h039_gm+others*.9+lics*0.99;
+      const op=gm-revTotal*p.opex;
+      const np=op*(1-p.tax);
+      const eps=+(np/(p.sh*100000)).toFixed(2);
+      const is039=h039>0||lics>0;
+      qrows.push({qLabel,year,qi:qi+1,dls,tasc,phy,h039,others,lics,rev,revTotal,gm,op,np,eps,is039,
+        gmR:(gm/revTotal*100).toFixed(1)});
+    }
+  }
+  return qrows;
+}
+
+// ═══════════════════════════════════════════
+// ANNUAL AGGREGATOR
+// ═══════════════════════════════════════════
+function getAnnual(sce='base') {
+  const p=P();
+  const m=getMonthly(sce);
+  const aRows=[];
+  [2026,2027,2028,2029,2030].forEach(y=>{
+    const ym=m.filter(r=>r.year===y);
+    const dls=ym.reduce((s,r)=>s+r.dls,0);
+    const tasc=ym.reduce((s,r)=>s+r.tasc,0);
+    const phy=ym.reduce((s,r)=>s+r.phy,0);
+    const h039=ym.reduce((s,r)=>s+r.h039,0);
+    const others=ym.reduce((s,r)=>s+r.others,0);
+    const lics=ym.reduce((s,r)=>s+(r.lics||0),0);
+    const rev=ym.reduce((s,r)=>s+r.total,0);
+    const revTotal=rev+lics;
+    const gm=dls*p.dls_gm+tasc*p.tasc_gm+phy*p.phy_gm+h039*p.h039_gm+others*.9+lics*0.99;
+    const op=gm-revTotal*p.opex;
+    const np=op*(1-p.tax);
+    const eps=+(np/(p.sh*100000)).toFixed(2);
+    aRows.push({year:y,rev,revTotal,lics,dls,tasc,phy,h039,others,gm,op,np,eps,
+      gmR:(gm/revTotal*100).toFixed(1)});
+  });
+  return aRows;
+}
+
+// ═══════════════════════════════════════════
+// SPLIT HISTORICAL
+// ═══════════════════════════════════════════
+function splitHist(h) {
+  let dls,tasc,phy=0,others;const r=h.rev;
+  if(h.y===2024){tasc=Math.round(r*.21);dls=Math.round(r*.75);others=r-tasc-dls;}
+  else if(h.y===2025){
+    if(h.m<=3){tasc=Math.round(r*.22);dls=Math.round(r*.74);others=r-tasc-dls;}
+    else if(h.m===4){phy=148000;tasc=Math.round(r*.18);dls=Math.round(r*.60);others=Math.max(0,r-phy-tasc-dls);}
+    else if(h.m<=7){tasc=Math.round(r*.25);dls=Math.round(r*.68);others=r-tasc-dls;}
+    else if(h.m===8){phy=225000;tasc=Math.round(r*.08);dls=Math.round((r-phy)*.70);others=Math.max(0,r-phy-tasc-dls);}
+    else if(h.m===9){tasc=Math.round(r*.28);dls=Math.round(r*.66);others=r-tasc-dls;}
+    else{phy=Math.round(r*(h.m===10?.08:h.m===11?.10:.25));tasc=Math.round(r*.30);dls=Math.round(r*(h.m===12?.38:.58));others=Math.max(0,r-phy-tasc-dls);}
+  } else {
+    if(h.m===1){tasc=26333;dls=Math.round(r*.71);others=Math.max(0,r-tasc-dls);}
+    else if(h.m===2){tasc=26333;dls=Math.round(r*.77);others=Math.max(0,r-tasc-dls);}
+    else{phy=Math.round(r*.08);tasc=26333;dls=Math.round(r*.53);others=Math.max(0,r-phy-tasc-dls);}
+  }
+  return {dls:Math.max(0,dls),tasc:Math.max(0,tasc),phy:Math.max(0,phy),h039:0,others:Math.max(0,others)};
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+const fmt  = n => Math.round(n).toLocaleString();
+// rev 單位是 NTD 千元(K)，顯示成億需 /100000
+const fmtB = n => (n / 100000).toFixed(2);   // K → 億，保留2位
+const fmtM = n => (n / 1000).toFixed(1);     // K → 百萬M，用於圖表軸
+const fmtPct = (a,b) => ((a/b-1)*100).toFixed(0)+'%';
+const posNeg = (v,s='') => v>=0
+  ? `<span class="pos">+${typeof s==='number'?v.toFixed(s):v.toFixed(1)}%</span>`
+  : `<span class="neg">${typeof s==='number'?v.toFixed(s):v.toFixed(1)}%</span>`;
+
+// ═══════════════════════════════════════════
+// RENDER OVERVIEW
+// ═══════════════════════════════════════════
+function renderOverview() {
+  const ann=getAnnual(gSce);
+  const f26=ann[0],f27=ann[1];
+
+  // KPIs
+  document.getElementById('kpi-ov').innerHTML=`
+    <div class="kcard" style="--kc:#58a6ff"><div class="kl">2025A EPS</div><div class="kv cc">4.85</div><div class="ks">元 · 歷史高點</div></div>
+    <div class="kcard" style="--kc:#e3b341"><div class="kl">2026E EPS（${gSce}）</div><div class="kv ca">${f26.eps}</div><div class="ks">元 · YoY ${posNeg((f26.eps/4.85-1)*100,'0')}</div></div>
+    <div class="kcard" style="--kc:#56d364"><div class="kl">2027E EPS（${gSce}）</div><div class="kv cg">${f27.eps}</div><div class="ks">元 · 039貢獻後</div></div>
+    <div class="kcard" style="--kc:#39d0d8"><div class="kl">2026E 合併營收</div><div class="kv ct">${(f26.rev/100000).toFixed(2)}億</div><div class="ks">NTD · YoY ${((f26.rev/1729252-1)*100).toFixed(0)}%</div></div>
+    <div class="kcard" style="--kc:#bc8cff"><div class="kl">HND-039 PDUFA</div><div class="kv cp" style="font-size:18px">2026/07/29</div><div class="ks">最大催化劑</div></div>
+    <div class="kcard" style="--kc:#58a6ff"><div class="kl">Phyrago 市場獨占</div><div class="kv cc" style="font-size:18px">至 2026/12</div><div class="ks">資料獨占期</div></div>
+  `;
+
+  // Stacked main chart
+  const histMs=HIST.filter(h=>h.y>=2024);
+  const fcastMs=getMonthly(gSce);
+  const hLen=histMs.length;
+  const allL=[...histMs.map(h=>`${h.y}/${String(h.m).padStart(2,'0')}`), ...fcastMs.map(r=>r.key)];
+  const mkAlpha=(c,hist)=>hist?c.replace(/[\d.]+\)$/,'1)'):c.replace(/[\d.]+\)$/,'.45)');
+  function dsData(fn,histFn,fcastFn){return[...histMs.map(histFn),...fcastMs.map(fcastFn)];}
+  const dlsD=dsData(null,h=>splitHist(h).dls/1000,r=>r.dls/1000);
+  const tascD=dsData(null,h=>splitHist(h).tasc/1000,r=>r.tasc/1000);
+  const phyD=dsData(null,h=>splitHist(h).phy/1000,r=>r.phy/1000);
+  const h039D=dsData(null,h=>0,r=>r.h039/1000);
+  const othD=dsData(null,h=>splitHist(h).others/1000,r=>r.others/1000);
+
+  if(CHARTS.main)CHARTS.main.destroy();
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  CHARTS.main=new Chart(ctx,{type:'bar',data:{labels:allL,datasets:[
+    {label:'DLS',data:dlsD,backgroundColor:dlsD.map((_,i)=>i<hLen?'rgba(88,166,255,.85)':'rgba(88,166,255,.4)'),stack:'s'},
+    {label:'Tascenso',data:tascD,backgroundColor:tascD.map((_,i)=>i<hLen?'rgba(57,208,216,.85)':'rgba(57,208,216,.4)'),stack:'s'},
+    {label:'Phyrago',data:phyD,backgroundColor:phyD.map((_,i)=>i<hLen?'rgba(227,179,65,.85)':'rgba(227,179,65,.4)'),stack:'s'},
+    {label:'HND-039',data:h039D,backgroundColor:'rgba(188,140,255,.65)',stack:'s'},
+    {label:'其他',data:othD,backgroundColor:othD.map((_,i)=>i<hLen?'rgba(86,211,100,.7)':'rgba(86,211,100,.35)'),stack:'s'},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,titleColor:'#c9d1d9',bodyColor:'#e6edf3',titleFont:{family:'JetBrains Mono',size:12},bodyFont:{size:13},padding:12}},scales:{
+    x:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b949e',font:{family:'JetBrains Mono',size:10},maxRotation:45,maxTicksLimit:20}},
+    y:{stacked:true,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#8b949e',font:{family:'JetBrains Mono',size:11},callback:v=>v+'M'}}
+  }}});
+
+  // Annual EPS chart
+  const allEPS=getAnnual('bear');const bEPS=getAnnual('bull');
+  if(CHARTS.epsA)CHARTS.epsA.destroy();
+  const ctx2=document.getElementById('epsAnnualChart').getContext('2d');
+  CHARTS.epsA=new Chart(ctx2,{type:'bar',data:{labels:[2023,2024,2025,2026,2027,2028],datasets:[
+    {label:'歷史',data:[5.41,3.37,4.85,null,null,null],backgroundColor:'rgba(88,166,255,.7)',borderRadius:5},
+    {label:'基本',data:[null,null,4.85,...ann.map(r=>r.eps)],backgroundColor:'rgba(227,179,65,.7)',borderRadius:5},
+    {label:'保守',data:[null,null,4.85,...allEPS.map(r=>r.eps)],type:'line',borderColor:'rgba(248,81,73,.7)',borderWidth:2,pointRadius:5,pointBackgroundColor:'rgba(248,81,73,.7)',fill:false,tension:.3},
+    {label:'樂觀',data:[null,null,4.85,...bEPS.map(r=>r.eps)],type:'line',borderColor:'rgba(86,211,100,.7)',borderWidth:2,pointRadius:5,pointBackgroundColor:'rgba(86,211,100,.7)',fill:false,tension:.3},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,titleFont:{family:'JetBrains Mono',size:11},bodyFont:{size:13},padding:10}},scales:{
+    x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b949e',font:{family:'JetBrains Mono',size:11}}},
+    y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#8b949e',font:{family:'JetBrains Mono',size:11}}}
+  }}});
+
+  // Scenario cards
+  const bearA=getAnnual('bear'),bullA=getAnnual('bull');
+  document.getElementById('sce3-cards').innerHTML=`
+    <div class="sce3card" style="border-color:rgba(248,81,73,.3)">
+      <div style="font-size:13px;color:var(--r2);font-weight:600;margin-bottom:8px">🐻 保守</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:6px">039 Q1-2027取證</div>
+      <div style="font-family:var(--mono);font-size:15px">2026E: <span class="cr bold">${bearA[0].eps}元</span></div>
+      <div style="font-family:var(--mono);font-size:15px">2027E: <span class="cr bold">${bearA[1].eps}元</span></div>
+    </div>
+    <div class="sce3card active">
+      <div style="font-size:13px;color:var(--a2);font-weight:600;margin-bottom:8px">📊 基本（當前）</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:6px">039 Q4-2026取證授權</div>
+      <div style="font-family:var(--mono);font-size:15px">2026E: <span class="ca bold">${ann[0].eps}元</span></div>
+      <div style="font-family:var(--mono);font-size:15px">2027E: <span class="ca bold">${ann[1].eps}元</span></div>
+    </div>
+    <div class="sce3card" style="border-color:rgba(86,211,100,.3)">
+      <div style="font-size:13px;color:var(--g2);font-weight:600;margin-bottom:8px">🚀 樂觀</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:6px">039 Q3-2026+快速放量</div>
+      <div style="font-family:var(--mono);font-size:15px">2026E: <span class="cg bold">${bullA[0].eps}元</span></div>
+      <div style="font-family:var(--mono);font-size:15px">2027E: <span class="cg bold">${bullA[1].eps}元</span></div>
+    </div>
+  `;
+
+  // Annual table — 2023A–2030E，含授權金欄
+  const ab=document.getElementById('annual-tbody');ab.innerHTML='';
+  const histRows=[
+    {year:2023,revB:11.06,gmR:99.9,opB:6.93,npB:7.27,eps:5.41,licsNote:'—',isE:false},
+    {year:2024,revB:8.31, gmR:99.9,opB:4.18,npB:4.73,eps:3.37,licsNote:'—',isE:false},
+    {year:2025,revB:17.29,gmR:84.5,opB:9.34,npB:7.50,eps:4.85,licsNote:'7.3億(授)',isE:false},
+  ];
+  [...histRows,...ann.map(r=>({
+    year:r.year,
+    revB:(r.revTotal/100000),
+    gmR:r.gmR,
+    opB:(r.op/100000),
+    npB:(r.np/100000),
+    eps:r.eps,
+    licsNote:r.lics>0?`+${(r.lics/100000).toFixed(2)}億`:null,
+    isE:true
+  }))].forEach((r,i,arr)=>{
+    const prev=arr[i-1];
+    const yoy=prev?posNeg((r.revB/prev.revB-1)*100,0):'—';
+    const licsCell = r.isE
+      ? (r.licsNote?`<span style="color:var(--p2);font-size:11px;font-family:var(--mono)">${r.licsNote}</span>`:'<span style="color:var(--muted)">—</span>')
+      : `<span style="color:var(--p2);font-size:11px">${r.licsNote}</span>`;
+    ab.innerHTML+=`<tr>
+      <td class="${r.isE?'ca bold':'bold'}">${r.year}${r.isE?'E':'A'}</td>
+      <td class="${r.isE?'ca':''}" style="font-family:var(--mono)">${r.revB.toFixed(2)}億</td>
+      <td>${licsCell}</td>
+      <td>${yoy}</td>
+      <td class="neu">${r.gmR}%</td>
+      <td style="font-family:var(--mono)">${r.opB.toFixed(2)}億</td>
+      <td style="font-family:var(--mono)">${r.npB.toFixed(2)}億</td>
+      <td class="${r.isE?'ca bold':'bold'}" style="font-size:15px">${r.eps}元</td>
+      <td><span class="flag ${r.isE?'flag-f':'flag-a'}">${r.isE?'預測':'實際'}</span></td>
+    </tr>`;
+  });
+}
+
+// ═══════════════════════════════════════════
+// RENDER EPS QUARTERLY
+// ═══════════════════════════════════════════
+function renderEPS() {
+  const qd=getQuarterly(epsSce);
+  document.getElementById('sce-desc-eps').textContent=SCE_DESC[epsSce];
+
+  // Q cards by year
+  [2026,2027,2028,2029,2030].forEach(y=>{
+    const el=document.getElementById(`qcards-${y}`);
+    el.innerHTML='';
+    const yq=qd.filter(r=>r.year===y);
+    // Annual EPS for year
+    const annEPS=yq.reduce((s,r)=>s+r.eps,0).toFixed(2);
+    yq.forEach(r=>{
+      const hq=HIST_Q_EPS[r.qLabel];
+      const isAct=!!hq;
+      const big=r.is039&&r.eps>2;
+      el.innerHTML+=`<div class="eps-qcard ${isAct?'actual':big?'big-039':'forecast'}">
+        <div class="eps-qlabel">${r.qLabel}${isAct?' ✓':''}</div>
+        <div class="eps-qval" style="color:${r.eps>4?'var(--g2)':r.eps>2?'var(--a2)':r.eps>0?'var(--c2)':'var(--r2)'}">${isAct?hq:r.eps}</div>
+        <div class="eps-qtag">${isAct?'實際':'元' }${r.is039?' 039貢獻':''}</div>
+      </div>`;
+    });
+    // Add annual total card
+    el.innerHTML+=`<div class="eps-qcard" style="border-color:var(--b2);background:rgba(255,255,255,.03)">
+      <div class="eps-qlabel">${y}全年</div>
+      <div class="eps-qval" style="color:var(--a2);font-size:26px">${annEPS}</div>
+      <div class="eps-qtag">元/股</div>
+    </div>`;
+  });
+
+  // Q chart — hist + forecast
+  const histQLabels=['2024Q1','2024Q2','2024Q3','2024Q4','2025Q1','2025Q2','2025Q3','2025Q4'];
+  const histQEPS=histQLabels.map(k=>HIST_Q_EPS[k]||null);
+  const fcastQLabels=qd.map(r=>r.qLabel);
+  const fcastQEPS=qd.map(r=>r.eps);
+  const allQL=[...histQLabels,...fcastQLabels];
+  const allQEPS=[...histQEPS,...fcastQEPS.map((v,i)=>histQEPS.length+i>=0?v:null)];
+  const colors=allQL.map((l,i)=>i<8?'rgba(88,166,255,.7)':qd[i-8]?.is039?'rgba(188,140,255,.7)':qd[i-8]?.eps>4?'rgba(86,211,100,.7)':'rgba(227,179,65,.7)');
+
+  if(CHARTS.epsQ)CHARTS.epsQ.destroy();
+  const ctx=document.getElementById('epsQChart').getContext('2d');
+  CHARTS.epsQ=new Chart(ctx,{type:'bar',data:{labels:allQL,datasets:[
+    {label:'EPS',data:allQL.map((_,i)=>i<8?histQEPS[i]:fcastQEPS[i-8]),backgroundColor:colors,borderRadius:5},
+    {label:'趨勢',data:allQL.map((_,i)=>i<8?histQEPS[i]:fcastQEPS[i-8]),type:'line',borderColor:'rgba(227,179,65,.7)',borderWidth:2,pointRadius:4,fill:false,tension:.3},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,titleFont:{family:'JetBrains Mono',size:12},bodyFont:{size:14},padding:12,callbacks:{label:c=>`EPS: ${c.parsed.y}元`}}},scales:{
+    x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b949e',font:{family:'JetBrains Mono',size:11},maxRotation:45}},
+    y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#8b949e',font:{family:'JetBrains Mono',size:11},callback:v=>v+'元'}}
+  }}});
+
+  // Q table
+  const tb=document.getElementById('eps-q-tbody');tb.innerHTML='';
+  let prevYear=null;
+  qd.forEach(r=>{
+    if(r.year!==prevYear){tb.innerHTML+=`<tr class="yr-sep"><td colspan="12">── ${r.year} ──</td></tr>`;prevYear=r.year;}
+    const hq=HIST_Q_EPS[r.qLabel];
+    const epsColor=r.eps>6?'cg':r.eps>3?'ca':r.eps>0?'cc':'cr';
+    tb.innerHTML+=`<tr>
+      <td class="${hq?'cg bold':'ca bold'}">${r.qLabel}${hq?' ✓':''}</td>
+      <td class="cc">${fmt(r.dls)}</td>
+      <td class="ct">${fmt(r.tasc)}</td>
+      <td class="ca">${fmt(r.phy)}</td>
+      <td class="cp">${r.h039>0?fmt(r.h039):'<span class="neu">—</span>'}</td>
+      <td class="cp" style="font-size:11px">${r.lics>0?'<span style="color:var(--p2)">+'+fmt(r.lics)+'</span>':'<span class="neu">—</span>'}</td>
+      <td class="neu">${fmt(r.others)}</td>
+      <td class="bold">${fmt(r.revTotal)}</td>
+      <td class="neu">${r.gmR}%</td>
+      <td>${fmt(r.np)}</td>
+      <td class="${epsColor} bold" style="font-size:15px">${hq||r.eps}元</td>
+      <td>—</td>
+    </tr>`;
+  });
+
+  // P&L table — 統一顯示億NTD，5年預測
+  const pb=document.getElementById('pnl-tbody');pb.innerHTML='';
+  const fann=getAnnual(epsSce);
+  const toB_hist = v => (v/100).toFixed(2)+'億';
+  const toB_fcst = v => (v/100000).toFixed(2)+'億';
+  const pnlDefs=[
+    {label:'合併營收',  hv:[831,1729],   fv:fann.map(r=>r.revTotal), bold:false},
+    {label:'  含授權金',hv:[0,730],      fv:fann.map(r=>r.lics),    bold:false,isLics:true},
+    {label:'毛利',      hv:[830,1462],   fv:fann.map(r=>r.gm),      bold:false},
+    {label:'毛利率',    hv:['99.9%','84.5%'],fv:fann.map(r=>r.gmR+'%'),isStr:true},
+    {label:'營業利益',  hv:[418,934],    fv:fann.map(r=>r.op),      bold:false},
+    {label:'稅後淨利',  hv:[473,750],    fv:fann.map(r=>r.np),      bold:false},
+    {label:'EPS（元）', hv:[3.37,4.85],  fv:fann.map(r=>r.eps),     bold:true, isEPS:true},
+  ];
+  pnlDefs.forEach(row=>{
+    const cells = [
+      ...row.hv.map(v=>{
+        if(row.isStr||row.isEPS) return `${v}${row.isEPS?'元':''}`;
+        if(row.isLics) return v>0?`<span style="color:var(--p2)">${(v/100).toFixed(2)}億</span>`:'—';
+        return toB_hist(v);
+      }),
+      ...row.fv.map(v=>{
+        if(row.isStr||row.isEPS) return `${v}${row.isEPS?'元':''}`;
+        if(row.isLics) return v>0?`<span style="color:var(--p2)">${(v/100000).toFixed(2)}億</span>`:'—';
+        return toB_fcst(v);
+      }),
+    ];
+    pb.innerHTML+=`<tr>
+      <td class="${row.bold?'bold':''}" style="font-size:${row.isLics?'12px':'inherit'};color:${row.isLics?'var(--muted)':'inherit'}">${row.label}</td>
+      ${cells.map((c,i)=>`<td class="${row.bold&&i>1?'ca bold':''}" style="${row.bold?'font-size:15px':''}">${c}</td>`).join('')}
+    </tr>`;
+  });
+
+  // 3 sce EPS compare
+  const sb=document.getElementById('sce3-eps-tbody');sb.innerHTML='';
+  ['bear','base','bull'].forEach(s=>{
+    const sqd=getQuarterly(s);
+    const sy=['2026','2027'].map(y=>{const yqs=sqd.filter(r=>r.year===+y);return{qs:yqs,ann:yqs.reduce((a,r)=>a+r.eps,0).toFixed(2)};});
+    const s28=getAnnual(s)[2];
+    const sColor={bear:'cr',base:'ca',bull:'cg'}[s];
+    sb.innerHTML+=`<tr>
+      <td class="${sColor} bold">{{label}}</td>
+      ${sy[0].qs.map(r=>`<td class="${sColor}">${r.eps}</td>`).join('')}
+      <td class="${sColor} bold">${sy[0].ann}</td>
+      ${sy[1].qs.map(r=>`<td class="${sColor}">${r.eps}</td>`).join('')}
+      <td class="${sColor} bold">${sy[1].ann}</td>
+      <td class="${sColor} bold">${s28.eps}</td>
+    </tr>`.replace('{{label}}',{bear:'🐻 保守',base:'📊 基本',bull:'🚀 樂觀'}[s]);
+  });
+
+  // Update model EPS display on params tab
+  const baseA=getAnnual('base');
+  const el26=document.getElementById('model-eps26');
+  const el27=document.getElementById('model-eps27');
+  if(el26)el26.textContent=baseA[0].eps+'元';
+  if(el27)el27.textContent=baseA[1].eps+'元';
+}
+
+// ═══════════════════════════════════════════
+// RENDER MONTHLY TAB — 含實際 vs 預測對照
+// ═══════════════════════════════════════════
+function renderMonthly() {
+  const fcast = getMonthly(mSce);
+
+  // ── 歷史實際月份（從 HIST，包含 2024～2026/03）──
+  // 合併：HIST 的歷史資料 + fcast 的預測資料
+  // 實際值：HIST 裡有的月份，以 HIST 為準
+  // 預測值：fcast 裡有的月份
+
+  // 建立含實際的完整時間線（2024/01 ~ 2028/12）
+  const histAll = HIST; // 已有 2024/01 ~ 2026/03
+  const histKeys = new Set(histAll.map(h=>`${h.y}/${String(h.m).padStart(2,'0')}`));
+
+  // 圖表資料：從 2024/01 開始顯示
+  // 實際：有 HIST 就填，沒有就 null
+  // 預測：fcast 範圍是 2026/01~2028/12，2024/2025 沒有預測
+
+  // 補充 2025 部分月的預測（從 fcast 中 2026 往前推無法，故在圖表上 2024/2025 只顯示實際）
+  // 圖表 x 軸：2024/01 ~ 2028/12（60個月）
+  const chartLabels = [];
+  const actualData  = [];  // 綠色：實際公告
+  const fcstData    = [];  // 藍色虛線：模型預測（僅 2026~2028）
+  const fcstMap = {};
+  fcast.forEach(r => { fcstMap[r.key] = r.total; });
+
+  for (let y = 2024; y <= 2028; y++) {
+    for (let m = 1; m <= 12; m++) {
+      const key = `${y}/${String(m).padStart(2,'0')}`;
+      chartLabels.push(key);
+      const histR = histAll.find(h => h.y===y && h.m===m);
+      actualData.push(histR ? histR.rev/1000 : null);
+      fcstData.push(fcstMap[key] ? fcstMap[key]/1000 : null);
+    }
+  }
+
+  // ── Chart 1：實際 vs 預測折線+柱狀 ──
+  if(CHARTS.mActualFcst) CHARTS.mActualFcst.destroy();
+  const ctx1 = document.getElementById('mActualFcstChart').getContext('2d');
+  CHARTS.mActualFcst = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: chartLabels,
+      datasets: [
+        {
+          label: '實際（公告）',
+          data: actualData,
+          backgroundColor: 'rgba(86,211,100,.75)',
+          borderRadius: 3,
+          order: 2,
+        },
+        {
+          label: '預測（模型）',
+          data: fcstData,
+          backgroundColor: 'rgba(88,166,255,.25)',
+          borderColor: 'rgba(88,166,255,.5)',
+          borderWidth: 1,
+          borderRadius: 3,
+          order: 3,
+        },
+        {
+          label: '預測趨勢',
+          data: fcstData,
+          type: 'line',
+          borderColor: 'rgba(227,179,65,.9)',
+          borderWidth: 2,
+          pointRadius: (ctx) => fcstData[ctx.dataIndex]!=null ? 3 : 0,
+          fill: false,
+          tension: 0.3,
+          order: 1,
+          spanGaps: false,
+        },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, labels: { color:'#c9d1d9', font:{size:13}, boxWidth:12, boxHeight:12, padding:16 } },
+        tooltip: {
+          backgroundColor:'#161b22', borderColor:'#30363d', borderWidth:1,
+          titleFont:{family:'JetBrains Mono',size:12}, bodyFont:{size:13}, padding:10,
+          callbacks: {
+            label: c => {
+              if(c.parsed.y==null) return null;
+              const suffix = c.datasetIndex===0 ? ' M（實際）' : c.datasetIndex===1 ? ' M（預測）' : null;
+              return suffix ? ` ${c.parsed.y.toFixed(1)}${suffix}` : null;
+            },
+            afterBody: (items) => {
+              const key = items[0]?.label;
+              if (!key) return;
+              const act = actualData[chartLabels.indexOf(key)];
+              const fc  = fcstData[chartLabels.indexOf(key)];
+              if (act!=null && fc!=null) {
+                const err = ((act-fc)/fc*100).toFixed(1);
+                return [`誤差率: ${parseFloat(err)>=0?'+':''}${err}%`];
+              }
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#8b949e',font:{family:'JetBrains Mono',size:9},maxRotation:45,maxTicksLimit:24} },
+        y: { grid:{color:'rgba(255,255,255,.05)'}, ticks:{color:'#8b949e',font:{family:'JetBrains Mono',size:11},callback:v=>v.toFixed(0)+'M'} }
+      }
+    }
+  });
+
+  // ── 精準度 KPI（已公告月份）──
+  const knownMonths = fcast.filter(r => r.isActual);
+  if (knownMonths.length > 0) {
+    const kpis = knownMonths.map(r => {
+      const err = r.actual - r.total;
+      const ep  = (err/r.total*100).toFixed(1);
+      const ok  = Math.abs(parseFloat(ep)) <= 15;
+      return `<div class="kcard" style="--kc:${ok?'var(--g1)':'var(--a1)'};padding:14px 16px">
+        <div class="kl">${r.key}</div>
+        <div style="display:flex;gap:12px;align-items:baseline;margin-top:4px">
+          <div>
+            <div style="font-size:10px;color:var(--muted)">實際</div>
+            <div style="font-family:var(--mono);font-size:17px;font-weight:700;color:var(--g2)">${(r.actual/1000).toFixed(1)}M</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--muted)">預測</div>
+            <div style="font-family:var(--mono);font-size:17px;font-weight:700;color:var(--muted)">${(r.total/1000).toFixed(1)}M</div>
+          </div>
+          <div style="margin-left:auto">
+            <div style="font-size:10px;color:var(--muted)">誤差</div>
+            <div style="font-family:var(--mono);font-size:17px;font-weight:700;color:${parseFloat(ep)>=0?'var(--g2)':'var(--r2)'}">${parseFloat(ep)>=0?'+':''}${ep}%</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('monthly-acc-kpis').innerHTML = `
+      <div style="font-size:13px;color:var(--muted);font-family:var(--mono);margin-bottom:10px;letter-spacing:1px">● 已公告月份 · 模型精準度</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">${kpis}</div>`;
+  } else {
+    document.getElementById('monthly-acc-kpis').innerHTML = '';
+  }
+
+  // ── Chart 2：產品結構堆疊（2026~2028 預測）──
+  if(CHARTS.mStack) CHARTS.mStack.destroy();
+  const ctx2 = document.getElementById('mStackChart').getContext('2d');
+  CHARTS.mStack = new Chart(ctx2, {
+    type:'bar',
+    data:{labels:fcast.map(r=>r.key),datasets:[
+      {label:'DLS',    data:fcast.map(r=>r.dls/1000),   backgroundColor:'rgba(88,166,255,.65)',stack:'s'},
+      {label:'Tascenso',data:fcast.map(r=>r.tasc/1000), backgroundColor:'rgba(57,208,216,.65)',stack:'s'},
+      {label:'Phyrago',data:fcast.map(r=>r.phy/1000),   backgroundColor:'rgba(227,179,65,.65)',stack:'s'},
+      {label:'HND-039',data:fcast.map(r=>r.h039/1000),  backgroundColor:'rgba(188,140,255,.7)',stack:'s'},
+      {label:'其他',   data:fcast.map(r=>r.others/1000), backgroundColor:'rgba(86,211,100,.4)', stack:'s'},
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,
+          titleFont:{family:'JetBrains Mono',size:11},bodyFont:{size:13},padding:10}
+      },
+      scales:{
+        x:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b949e',font:{family:'JetBrains Mono',size:10},maxRotation:45}},
+        y:{stacked:true,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#8b949e',font:{family:'JetBrains Mono',size:11},callback:v=>v+'M'}}
+      }
+    }
+  });
+
+  // ── 明細表：實際 vs 預測並列 ──
+  const tb = document.getElementById('monthly-tbody');
+  tb.innerHTML = '';
+  let prevY = null;
+
+  // 合併歷史（2026已知）+ 全部預測
+  // 表格顯示 2026/01 ~ 2028/12
+  fcast.forEach(r => {
+    if (r.year !== prevY) {
+      tb.innerHTML += `<tr class="yr-sep"><td colspan="11">── ${r.year} ──</td></tr>`;
+      prevY = r.year;
+    }
+    const isA  = r.isActual;
+    const act  = r.actual;
+    const err  = isA ? act - r.total : null;
+    const errP = isA && r.total>0 ? (err/r.total*100).toFixed(1) : null;
+    const errOk= errP!=null && Math.abs(parseFloat(errP))<=15;
+
+    const yoyStr = r.yoy!=null ? posNeg(r.yoy,1) : '—';
+    const momStr = r.mom!=null ? posNeg(r.mom,1) : '—';
+
+    // 實際欄：已知顯示實際值，未知顯示「—」
+    const actualCell = isA
+      ? `<td style="color:var(--g2);font-weight:700;font-family:var(--mono)">${fmt(act)}</td>`
+      : `<td style="color:var(--b2)">—</td>`;
+
+    // 誤差欄
+    const errCell = errP!=null
+      ? `<td style="font-family:var(--mono);font-weight:600;color:${parseFloat(errP)>=0?'var(--g2)':'var(--r2)'}">${parseFloat(errP)>=0?'+':''}${errP}%</td>`
+      : `<td style="color:var(--b2)">—</td>`;
+
+    tb.innerHTML += `<tr style="${isA?'background:rgba(63,185,80,.04)':''}">
+      <td style="font-weight:${isA?700:400};color:${isA?'var(--g2)':'var(--text2)'}">
+        ${r.year}/${MN[r.month]}${isA?' <span style="font-size:10px;color:var(--g2)">✓公告</span>':''}
+      </td>
+      ${actualCell}
+      <td style="font-family:var(--mono);color:${isA?'var(--muted)':'var(--text2)'}">${fmt(r.total)}</td>
+      ${errCell}
+      <td style="border-left:1px solid var(--b2);color:rgba(88,166,255,.9);font-family:var(--mono)">${fmt(r.dls)}</td>
+      <td style="color:rgba(57,208,216,.9);font-family:var(--mono)">${fmt(r.tasc)}</td>
+      <td style="color:rgba(227,179,65,.9);font-family:var(--mono)">${fmt(r.phy)}</td>
+      <td style="color:rgba(188,140,255,.9);font-family:var(--mono)">${r.h039>0?fmt(r.h039):'—'}</td>
+      <td>${yoyStr}</td>
+      <td>${momStr}</td>
+      <td><span class="flag ${isA?'flag-a':'flag-f'}">${isA?'已公告':'預測'}</span></td>
+    </tr>`;
+  });
+}
+
+// ═══════════════════════════════════════════
+// RENDER PRODUCTS
+// ═══════════════════════════════════════════
+function renderProducts() {
+  const data=getMonthly('base');
+  const lbls=data.map(r=>r.key);
+  // 傳入值單位：NTD K → 顯示時除以1000得百萬M
+  function mini(id, vals, color, label) {
+    if(CHARTS[id])CHARTS[id].destroy();
+    const ctx=document.getElementById(id).getContext('2d');
+    const g=ctx.createLinearGradient(0,0,0,180);
+    g.addColorStop(0,color.replace(')',',0.25)').replace('rgb','rgba'));
+    g.addColorStop(1,color.replace(')',',0)').replace('rgb','rgba'));
+    CHARTS[id]=new Chart(ctx,{
+      type:'line',
+      data:{labels:lbls,datasets:[{
+        data:vals,
+        borderColor:color,
+        backgroundColor:g,
+        borderWidth:2.5,
+        pointRadius:1.5,
+        fill:true,
+        tension:.4
+      }]},
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            backgroundColor:'#161b22',
+            borderColor:'#30363d',
+            borderWidth:1,
+            titleFont:{family:'JetBrains Mono',size:11},
+            bodyFont:{size:13},
+            padding:8,
+            // vals 已是 NTD M（除過1000）
+            callbacks:{label:c=>`${c.parsed.y.toFixed(1)}M NTD`}
+          }
+        },
+        scales:{
+          x:{
+            grid:{color:'rgba(255,255,255,.03)'},
+            ticks:{color:'#8b949e',font:{family:'JetBrains Mono',size:9},maxRotation:45,maxTicksLimit:10}
+          },
+          y:{
+            grid:{color:'rgba(255,255,255,.04)'},
+            ticks:{
+              color:'#8b949e',
+              font:{family:'JetBrains Mono',size:10},
+              // vals 單位已是 NTD M，直接顯示
+              callback: v => v.toFixed(0)+'M'
+            }
+          }
+        }
+      }
+    });
+  }
+  // 傳入前先除1000：NTD K → NTD M
+  mini('dlsChart',   data.map(r=>r.dls/1000),   'rgb(88,166,255)',   'DLS');
+  mini('tascChart',  data.map(r=>r.tasc/1000),  'rgb(57,208,216)',   'Tascenso');
+  mini('phyChart',   data.map(r=>r.phy/1000),   'rgb(227,179,65)',   'Phyrago');
+  mini('hnd039Chart',data.map(r=>r.h039/1000),  'rgb(188,140,255)',  'HND-039');
+}
+
+// ═══════════════════════════════════════════
+// RENDER ASSUMPTIONS
+// ═══════════════════════════════════════════
+function renderParams() {
+  const tb=document.getElementById('hist-tbody');tb.innerHTML='';
+  HIST.slice(-15).forEach(h=>{
+    tb.innerHTML+=`<tr>
+      <td class="bold">${h.y}/${MN[h.m]}</td>
+      <td class="bold cc">${fmt(h.rev)}</td>
+      <td>${posNeg(h.yoy,1)}</td><td>${posNeg(h.mom,1)}</td>
+      <td>${h.note?`<span class="flag flag-f">${h.note}</span>`:'—'}</td>
+    </tr>`;
+  });
+  const baseA=getAnnual('base');
+  const el26=document.getElementById('model-eps26');const el27=document.getElementById('model-eps27');
+  if(el26)el26.textContent=baseA[0].eps+'元';
+  if(el27)el27.textContent=baseA[1].eps+'元';
+
+  // 動態顯示 039 月高原計算結果
+  const hint = document.getElementById('h039-calc-hint');
+  if (hint) {
+    const ms   = parseFloat(document.getElementById('h039_ms')?.value)   || 8;
+    const rate = parseFloat(document.getElementById('h039_rate')?.value) || 30;
+    const usd  = parseFloat(document.getElementById('usd_ntd')?.value)   || 32;
+    const peak = Math.round(2110 * ms/100 * rate/100 / 12 * usd * 1000);
+    const timingEl = document.getElementById('h039_timing');
+    const timingLabel = timingEl ? timingEl.options[timingEl.selectedIndex]?.text : '—';
+    const rampMap = { base: 30, bear: 36, bull: 22 };
+    hint.innerHTML =
+      `取證時間：<span style="color:var(--a2)">${timingLabel}</span><br>` +
+      `月高原 = $${2110}M × ${ms}% × ${rate}% ÷ 12 × ${usd} = ` +
+      `<span style="color:var(--g2);font-weight:700">${(peak/1000).toFixed(1)}M NTD/月</span><br>` +
+      `爬坡模型：Logistic S曲線 · 基本情境 30個月達高原（業界實證 24–36月）<br>` +
+      `參考：Cabometyx 2016上市→2019年達高原（約3年）`;
+  }
+}
+
+// ═══════════════════════════════════════════
+// UPDATE MODULE — FULL ACTUAL vs FORECAST
+// ═══════════════════════════════════════════
+
+function addActual() {
+  const month = document.getElementById('upd_month').value.trim();
+  const total = parseInt(document.getElementById('upd_total').value) || 0;
+  if (!month || !total) { alert('請輸入月份（YYYY/MM）與合計月營收'); return; }
+
+  const [yr, mo] = month.split('/').map(Number);
+  if (!yr || !mo || mo < 1 || mo > 12) { alert('月份格式錯誤，請輸入 YYYY/MM'); return; }
+
+  const mData = getMonthly('base');
+  const fcst = mData.find(r => r.year === yr && r.month === mo);
+
+  const fDLS  = fcst ? fcst.dls   : Math.round(total * 0.55);
+  const fTasc = fcst ? fcst.tasc  : Math.round(total * 0.30);
+  const fPhy  = fcst ? fcst.phy   : Math.round(total * 0.10);
+  const fH039 = fcst ? fcst.h039  : 0;
+  const fOth  = fcst ? fcst.others: Math.round(total * 0.05);
+  const fTotal= fcst ? fcst.total : total;
+
+  const hasBreakdown = !!(
+    parseInt(document.getElementById('upd_dls').value) ||
+    parseInt(document.getElementById('upd_tasc').value) ||
+    parseInt(document.getElementById('upd_phy').value)
+  );
+
+  let aDLS, aTasc, aPhy, aOth;
+  if (hasBreakdown) {
+    aDLS  = parseInt(document.getElementById('upd_dls').value)   || 0;
+    aTasc = parseInt(document.getElementById('upd_tasc').value)  || 0;
+    aPhy  = parseInt(document.getElementById('upd_phy').value)   || 0;
+    aOth  = parseInt(document.getElementById('upd_other').value) || Math.max(0, total - aDLS - aTasc - aPhy);
+  } else {
+    const scale = fTotal > 0 ? total / fTotal : 1;
+    aDLS  = Math.round(fDLS  * scale);
+    aTasc = Math.round(fTasc * scale);
+    aPhy  = Math.round(fPhy  * scale);
+    aOth  = Math.max(0, total - aDLS - aTasc - aPhy);
+  }
+
+  userActuals = userActuals.filter(r => r.month !== month);
+  userActuals.push({
+    month, yr, mo, total,
+    aDLS, aTasc, aPhy, aOth,
+    fTotal, fDLS, fTasc, fPhy, fH039, fOth,
+    hasBreakdown,
+    err: total - fTotal,
+    errPct: fTotal > 0 ? ((total - fTotal) / fTotal * 100) : 0
+  });
+  userActuals.sort((a, b) => a.yr !== b.yr ? a.yr - b.yr : a.mo - b.mo);
+
+  // ── 同步寫入 HIST（讓逐月預測頁自動顯示實際值）──
+  // 計算 YoY、MoM
+  const prevYear = HIST.find(h => h.y === yr - 1 && h.m === mo);
+  const prevMo   = HIST.slice().sort((a,b)=>a.y!==b.y?a.y-b.y:a.m-b.m)
+                       .filter(h => h.y < yr || (h.y === yr && h.m < mo)).slice(-1)[0];
+  const yoy = prevYear ? +((total / prevYear.rev - 1) * 100).toFixed(1) : null;
+  const mom = prevMo   ? +((total / prevMo.rev   - 1) * 100).toFixed(1) : null;
+  // 移除同月份舊紀錄（若有），再插入
+  const histIdx = HIST.findIndex(h => h.y === yr && h.m === mo);
+  const newHistRow = { y: yr, m: mo, rev: total, yoy, mom, userAdded: true };
+  if (histIdx >= 0) {
+    HIST[histIdx] = newHistRow;
+  } else {
+    HIST.push(newHistRow);
+    HIST.sort((a, b) => a.y !== b.y ? a.y - b.y : a.m - b.m);
+  }
+
+  renderUpdateTab();
+  // 同步刷新逐月預測頁（若正在顯示）
+  const activeTab = document.querySelector('.tab.on');
+  const tabIdx = [...document.querySelectorAll('.tab')].indexOf(activeTab);
+  if (tabIdx === 2) setTimeout(() => { try { renderMonthly(); } catch(e){} }, 30);
+
+  ['upd_month','upd_total','upd_dls','upd_tasc','upd_phy','upd_other'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+function clearActuals() {
+  if (!userActuals.length) return;
+  if (!confirm('確定清除所有已輸入的實際值？')) return;
+  // 同步從 HIST 移除 userAdded 標記的月份
+  for (let i = HIST.length - 1; i >= 0; i--) {
+    if (HIST[i].userAdded) HIST.splice(i, 1);
+  }
+  userActuals = [];
+  renderUpdateTab();
+}
+
+function renderUpdateTab() {
+  if (!userActuals.length) {
+    document.getElementById('full-compare-tbody').innerHTML =
+      '<tr><td colspan="14" style="text-align:center;color:var(--muted);padding:28px;font-size:14px">尚未輸入任何實際月營收資料。</td></tr>';
+    document.getElementById('latest-card').innerHTML =
+      '<div style="font-size:13px;color:var(--muted);font-family:var(--mono);padding:20px;background:var(--s1);border:1px solid var(--b1);border-radius:10px;height:100%;display:flex;align-items:center;justify-content:center">👈 輸入實際月營收後，此處顯示本月各產品實際 vs 預測對照</div>';
+    document.getElementById('upd-chart-box').style.display = 'none';
+    document.getElementById('upd-prod-chart-box').style.display = 'none';
+    document.getElementById('upd-err-box').style.display = 'none';
+    return;
+  }
+
+  // ── LATEST MONTH CARDS ──
+  const latest = userActuals[userActuals.length - 1];
+  const MN2 = ['','1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const pcts = latest.fTotal > 0 ? (latest.errPct).toFixed(1) : '0.0';
+  const errColor = Math.abs(parseFloat(pcts)) > 20 ? 'var(--r2)' : Math.abs(parseFloat(pcts)) > 10 ? 'var(--a2)' : 'var(--g2)';
+
+  function prodCard(label, actual, fcst, color, isBrkdwn) {
+    const err = actual - fcst;
+    const ep = fcst > 0 ? (err / fcst * 100).toFixed(1) : '0.0';
+    const dot = `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle"></span>`;
+    return `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px 16px;border-left:3px solid ${color}">
+      <div style="font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:8px">${dot}${label}${isBrkdwn===false?' <span style="font-size:10px;opacity:.6">（推算）</span>':''}</div>
+      <div style="display:flex;gap:16px;align-items:baseline">
+        <div>
+          <div style="font-size:11px;color:var(--muted)">實際</div>
+          <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--text)">${fmt(actual)}</div>
+        </div>
+        <div style="color:var(--muted);font-size:18px">vs</div>
+        <div>
+          <div style="font-size:11px;color:var(--muted)">模型預測</div>
+          <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--muted)">${fmt(fcst)}</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-size:11px;color:var(--muted)">誤差</div>
+          <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:${parseFloat(ep)>=0?'var(--g2)':'var(--r2)'}">${parseFloat(ep)>=0?'+':''}${ep}%</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;height:4px;background:var(--b1);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${Math.min(100,Math.abs(parseFloat(ep))*3+30)}%;background:${color};opacity:.6;border-radius:2px"></div>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('latest-card').innerHTML = `
+    <div style="background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:16px;font-weight:600">${latest.yr}年${MN2[latest.mo]} 最新月份</div>
+        <div style="font-family:var(--mono);font-size:14px">
+          合計 <span style="color:var(--g2);font-weight:700">${fmt(latest.total)}</span> vs 預測 <span style="color:var(--muted)">${fmt(latest.fTotal)}</span>
+          <span style="margin-left:8px;color:${errColor};font-weight:700">${parseFloat(pcts)>=0?'+':''}${pcts}%</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${prodCard('DLS', latest.aDLS, latest.fDLS, '#58a6ff', latest.hasBreakdown)}
+        ${prodCard('Tascenso', latest.aTasc, latest.fTasc, '#39d0d8', latest.hasBreakdown)}
+        ${prodCard('Phyrago', latest.aPhy, latest.fPhy, '#e3b341', latest.hasBreakdown)}
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px">誤差信號</div>
+            <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:${errColor}">
+              ${Math.abs(parseFloat(pcts))>20?'⚠ 需校正':Math.abs(parseFloat(pcts))>10?'⚡ 留意':' ✓ 正常'}
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">${Math.abs(parseFloat(pcts))>20?'建議至「參數設定」調整成長率':''}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // ── TOTAL CHART ──
+  document.getElementById('upd-chart-box').style.display = 'block';
+  const totalLabels = userActuals.map(r => r.month);
+  const totalActual = userActuals.map(r => r.total / 1000);
+  const totalFcst   = userActuals.map(r => r.fTotal / 1000);
+  if (CHARTS.updTotal) CHARTS.updTotal.destroy();
+  const ctx1 = document.getElementById('updTotalChart').getContext('2d');
+  CHARTS.updTotal = new Chart(ctx1, {
+    type: 'line',
+    data: { labels: totalLabels, datasets: [
+      { label: '實際', data: totalActual, borderColor: '#56d364', borderWidth: 2.5, pointRadius: 6, pointBackgroundColor: '#56d364', fill: false, tension: .3 },
+      { label: '預測', data: totalFcst,   borderColor: '#58a6ff', borderWidth: 2, pointRadius: 5, pointBackgroundColor: '#58a6ff', fill: false, tension: .3, borderDash: [6, 3] },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', borderWidth: 1, titleFont: { family: 'JetBrains Mono', size: 12 }, bodyFont: { size: 13 }, padding: 10, callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y.toFixed(1)}M NTD` } } }, scales: {
+      x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#8b949e', font: { family: 'JetBrains Mono', size: 12 } } },
+      y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#8b949e', font: { family: 'JetBrains Mono', size: 11 }, callback: v => v.toFixed(0) + 'M' } }
+    }}
+  });
+
+  // ── PRODUCT BAR CHART (latest month) ──
+  document.getElementById('upd-prod-chart-box').style.display = 'block';
+  document.getElementById('upd-prod-title').textContent = `${latest.yr}/${String(latest.mo).padStart(2,'0')} 各產品：實際 vs 模型預測（NTD千元）`;
+  const prods = ['DLS', 'Tascenso', 'Phyrago', '其他'];
+  const aVals = [latest.aDLS, latest.aTasc, latest.aPhy, latest.aOth];
+  const fVals = [latest.fDLS, latest.fTasc, latest.fPhy, latest.fOth];
+  if (CHARTS.updProd) CHARTS.updProd.destroy();
+  const ctx2 = document.getElementById('updProdChart').getContext('2d');
+  CHARTS.updProd = new Chart(ctx2, {
+    type: 'bar',
+    data: { labels: prods, datasets: [
+      { label: '實際', data: aVals, backgroundColor: ['rgba(88,166,255,.75)', 'rgba(57,208,216,.75)', 'rgba(227,179,65,.75)', 'rgba(86,211,100,.6)'], borderRadius: 5 },
+      { label: '預測', data: fVals, backgroundColor: ['rgba(88,166,255,.2)', 'rgba(57,208,216,.2)', 'rgba(227,179,65,.2)', 'rgba(86,211,100,.15)'], borderColor: ['#58a6ff','#39d0d8','#e3b341','#56d364'], borderWidth: 2, borderRadius: 5 },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { color: '#c9d1d9', font: { size: 13 }, boxWidth: 12, boxHeight: 12 } }, tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', borderWidth: 1, titleFont: { family: 'JetBrains Mono', size: 12 }, bodyFont: { size: 13 }, padding: 10, callbacks: { label: c => ` ${c.dataset.label}: ${fmt(c.parsed.y)} K` } } }, scales: {
+      x: { grid: { display: false }, ticks: { color: '#c9d1d9', font: { size: 14, weight: '600' } } },
+      y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#8b949e', font: { family: 'JetBrains Mono', size: 11 }, callback: v => (v / 1000).toFixed(0) + 'M' } }
+    }}
+  });
+
+  // ── FULL COMPARISON TABLE ──
+  const tb = document.getElementById('full-compare-tbody');
+  tb.innerHTML = '';
+  userActuals.forEach(r => {
+    const dlsErr = r.aDLS - r.fDLS, tascErr = r.aTasc - r.fTasc, phyErr = r.aPhy - r.fPhy;
+    const dlsEp  = r.fDLS  > 0 ? (dlsErr  / r.fDLS  * 100).toFixed(1) : '—';
+    const tascEp = r.fTasc > 0 ? (tascErr / r.fTasc * 100).toFixed(1) : '—';
+    const phyEp  = r.fPhy  > 0 ? (phyErr  / r.fPhy  * 100).toFixed(1) : '—';
+    const totEp  = r.errPct.toFixed(1);
+    const signal = Math.abs(r.errPct) > 25 ? `<span style="color:var(--r2);font-weight:700">⚠ ${r.errPct>0?'高於':'低於'}預測</span>` :
+                   Math.abs(r.errPct) > 12 ? `<span style="color:var(--a2)">⚡ 留意</span>` :
+                   `<span style="color:var(--g2)">✓ 正常</span>`;
+    const errCell = (v, ep) => {
+      if (ep === '—') return `<td class="neu">—</td>`;
+      const n = parseFloat(ep);
+      return `<td class="${n >= 0 ? 'pos' : 'neg'}" style="font-family:var(--mono)">${n >= 0 ? '+' : ''}${ep}%</td>`;
+    };
+    const brkNote = r.hasBreakdown ? '' : ' <span style="font-size:10px;color:var(--muted);font-family:var(--mono)">(推算)</span>';
+    tb.innerHTML += `<tr>
+      <td class="bold cc" style="font-family:var(--mono)">${r.month}</td>
+      <td style="border-left:2px solid rgba(88,166,255,.2)">${fmt(r.aDLS)}${brkNote}</td>
+      <td style="color:var(--muted)">${fmt(r.fDLS)}</td>
+      ${errCell(dlsErr, dlsEp)}
+      <td style="border-left:2px solid rgba(57,208,216,.2)">${fmt(r.aTasc)}${brkNote}</td>
+      <td style="color:var(--muted)">${fmt(r.fTasc)}</td>
+      ${errCell(tascErr, tascEp)}
+      <td style="border-left:2px solid rgba(227,179,65,.2)">${fmt(r.aPhy)}${brkNote}</td>
+      <td style="color:var(--muted)">${fmt(r.fPhy)}</td>
+      ${errCell(phyErr, phyEp)}
+      <td style="border-left:2px solid var(--b1);color:var(--g2);font-weight:700;font-family:var(--mono)">${fmt(r.total)}</td>
+      <td style="color:var(--muted);font-family:var(--mono)">${fmt(r.fTotal)}</td>
+      <td class="${parseFloat(totEp)>=0?'pos':'neg'}" style="font-family:var(--mono);font-weight:700">${parseFloat(totEp)>=0?'+':''}${totEp}%</td>
+      <td>${signal}</td>
+    </tr>`;
+  });
+
+  // ── ERROR TREND CHART ──
+  if (userActuals.length >= 2) {
+    document.getElementById('upd-err-box').style.display = 'block';
+    const errLabels = userActuals.map(r => r.month);
+    const dlsErrs  = userActuals.map(r => r.fDLS  > 0 ? ((r.aDLS  - r.fDLS)  / r.fDLS  * 100) : 0);
+    const tascErrs = userActuals.map(r => r.fTasc > 0 ? ((r.aTasc - r.fTasc) / r.fTasc * 100) : 0);
+    const phyErrs  = userActuals.map(r => r.fPhy  > 0 ? ((r.aPhy  - r.fPhy)  / r.fPhy  * 100) : 0);
+    const totErrs  = userActuals.map(r => r.errPct);
+
+    if (CHARTS.updErr) CHARTS.updErr.destroy();
+    const ctx3 = document.getElementById('updErrChart').getContext('2d');
+    CHARTS.updErr = new Chart(ctx3, {
+      type: 'line',
+      data: { labels: errLabels, datasets: [
+        { label: 'DLS誤差%',       data: dlsErrs,  borderColor: '#58a6ff', borderWidth: 2, pointRadius: 4, fill: false, tension: .3 },
+        { label: 'Tascenso誤差%',  data: tascErrs, borderColor: '#39d0d8', borderWidth: 2, pointRadius: 4, fill: false, tension: .3 },
+        { label: 'Phyrago誤差%',   data: phyErrs,  borderColor: '#e3b341', borderWidth: 2, pointRadius: 4, fill: false, tension: .3 },
+        { label: '合計誤差%',      data: totErrs,  borderColor: '#56d364', borderWidth: 2.5, pointRadius: 5, fill: false, tension: .3 },
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { color: '#c9d1d9', font: { size: 12 }, boxWidth: 10, boxHeight: 10 } }, tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', borderWidth: 1, titleFont: { family: 'JetBrains Mono', size: 12 }, bodyFont: { size: 13 }, padding: 10, callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } }, scales: {
+        x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#8b949e', font: { family: 'JetBrains Mono', size: 12 } } },
+        y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#8b949e', font: { family: 'JetBrains Mono', size: 11 }, callback: v => v.toFixed(0) + '%' },
+          afterDataLimits: scale => { scale.min = Math.min(scale.min, -30); scale.max = Math.max(scale.max, 30); }
+        }
+      }}
+    });
+
+    // Calibration hints
+    const avgDLS  = dlsErrs.reduce((s,v)=>s+v,0)/dlsErrs.length;
+    const avgTasc = tascErrs.reduce((s,v)=>s+v,0)/tascErrs.length;
+    const avgPhy  = phyErrs.reduce((s,v)=>s+v,0)/phyErrs.length;
+    function hint(label, avg, paramName, color) {
+      if (Math.abs(avg) < 10) return `<div style="background:var(--s2);border:1px solid var(--b1);border-left:3px solid var(--g2);border-radius:8px;padding:12px 14px;font-size:13px"><span style="color:var(--g2)">✓</span> <strong style="color:${color}">${label}</strong> 誤差平均 ${avg.toFixed(1)}% · 模型穩定</div>`;
+      const dir = avg > 0 ? '模型低估' : '模型高估';
+      const adj = avg > 0 ? '調高' : '調低';
+      return `<div style="background:var(--s2);border:1px solid rgba(248,81,73,.2);border-left:3px solid var(--r2);border-radius:8px;padding:12px 14px;font-size:13px">
+        <span style="color:var(--r2)">⚠</span> <strong style="color:${color}">${label}</strong> 平均 ${dir} ${Math.abs(avg).toFixed(1)}%
+        <div style="color:var(--muted);margin-top:4px;font-size:12px">建議至「參數設定」<strong>${adj} ${paramName}</strong> 調整預測</div>
+      </div>`;
+    }
+    document.getElementById('calibrate-hints').innerHTML =
+      hint('DLS', avgDLS, 'DLS成長率（目前衰退模型）', '#58a6ff') +
+      hint('Tascenso', avgTasc, 'Tascenso成長率', '#39d0d8') +
+      hint('Phyrago', avgPhy, 'Phyrago爬坡速度', '#e3b341');
+  } else {
+    document.getElementById('upd-err-box').style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════
+// GLOBAL CONTROLS
+// ═══════════════════════════════════════════
+function setGSce(s){
+  gSce=s;
+  document.querySelectorAll('#tab-overview .sbg .sb').forEach((b,i)=>b.classList.toggle('on',['bear','base','bull'][i]===s));
+  const el=document.getElementById('sce-desc-g');if(el)el.textContent=SCE_DESC[s];
+  setTimeout(()=>{try{renderOverview();}catch(e){}},30);
+}
+function setMSce(s){
+  mSce=s;
+  document.querySelectorAll('#tab-monthly .sbg .sb').forEach((b,i)=>b.classList.toggle('on',['bear','base','bull'][i]===s));
+  setTimeout(()=>{try{renderMonthly();}catch(e){}},30);
+}
+function setEpsSce(s){
+  epsSce=s;
+  document.querySelectorAll('#tab-eps .sbg .sb').forEach((b,i)=>b.classList.toggle('on',['bear','base','bull'][i]===s));
+  setTimeout(()=>{try{renderEPS();}catch(e){}},30);
+}
+
+function showTab(id) {
+  // 先做 CSS 切換（同步，確保畫面立即回應）
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  const panel = document.getElementById('tab-' + id);
+  if (panel) panel.classList.add('on');
+  const idx = ['overview','eps','monthly','products','update','params'].indexOf(id);
+  const tabs = document.querySelectorAll('.tab');
+  if (tabs[idx]) tabs[idx].classList.add('on');
+
+  // 延遲渲染（iOS Safari 需要 DOM 更新後才能操作 canvas）
+  setTimeout(() => {
+    try {
+      if (id === 'overview') renderOverview();
+      else if (id === 'eps') renderEPS();
+      else if (id === 'monthly') renderMonthly();
+      else if (id === 'products') renderProducts();
+      else if (id === 'update') renderUpdateTab();
+      else if (id === 'params') renderParams();
+    } catch(e) {
+      console.error('Tab render error:', id, e);
+    }
+  }, 30);
+}
+
+// refreshAll：修改任何參數後，同步刷新「所有」已計算資料
+// 策略：重新渲染當前tab + 標記所有其他tab需要更新（切換時自動刷新）
+function refreshAll(){
+  // 找出當前顯示的tab
+  const tabs=['overview','eps','monthly','products','update','params'];
+  const cur = document.querySelector('.tab.on');
+  const idx  = cur ? [...document.querySelectorAll('.tab')].indexOf(cur) : 0;
+  const curId = tabs[idx] || 'overview';
+
+  // 直接重新渲染當前tab
+  showTab(curId);
+
+  // 同時在背景更新EPS模型對比表（params tab）
+  const baseA = getAnnual('base');
+  const el26  = document.getElementById('model-eps26');
+  const el27  = document.getElementById('model-eps27');
+  if(el26) el26.textContent = baseA[0].eps + '元';
+  if(el27) el27.textContent = baseA[1].eps + '元';
+}
+
+// addActual後也觸發完整重渲
+function addActualAndRefresh() {
+  addActual();
+  // addActual內部已呼叫renderUpdateTab，再同步刷新其他tab
+  renderOverview();
+  renderEPS();
+  renderMonthly();
+}
+
+function saveModel(){
+  const params={opex_rate:document.getElementById('opex_rate').value,tax_rate:document.getElementById('tax_rate').value,shares:document.getElementById('shares').value,dls_gm:document.getElementById('dls_gm').value,tasc_gm:document.getElementById('tasc_gm').value,phy_gm:document.getElementById('phy_gm').value,h039_gm:document.getElementById('h039_gm').value,h039_rate:document.getElementById('h039_rate').value,h039_ms:document.getElementById('h039_ms').value,h039_timing:document.getElementById('h039_timing').value,usd_ntd:document.getElementById('usd_ntd').value,userActuals};
+  const b=new Blob([JSON.stringify(params,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='handa_model_params.json';a.click();
+}
+function exportCSV(){
+  const data=getMonthly('base');
+  let csv='Month,DLS,Tascenso,Phyrago,HND039,Others,Total,YoY,MoM\n';
+  data.forEach(r=>{csv+=`${r.key},${r.dls},${r.tasc},${r.phy},${r.h039},${r.others},${r.total},${r.yoy?r.yoy.toFixed(1):''},${r.mom?r.mom.toFixed(1):''}\n`;});
+  const b=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='handa_forecast.csv';a.click();
+}
+
+// INIT — 延遲初始化確保 DOM 完全載入
+document.addEventListener('DOMContentLoaded', function() {
+  try { renderOverview(); } catch(e) { console.error('Init error:', e); }
+});
+// 備用：直接執行（若 DOMContentLoaded 已過）
+if (document.readyState !== 'loading') {
+  try { renderOverview(); } catch(e) { console.error('Init error:', e); }
+}
+</script>
+</body>
+</html>
