@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>漢達 6620 · 財務預測模型 v2.7</title>
+<title>漢達 6620 · 財務預測模型 v2.14</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -219,7 +219,7 @@ tr:hover td{background:rgba(88,166,255,.04)}
 <!-- HEADER -->
 <div class="hdr anim">
   <div>
-    <div class="hdr-badge">漢達生技 6620 · 財務預測模型 v2.7</div>
+    <div class="hdr-badge">漢達生技 6620 · 財務預測模型 v2.14</div>
     <div class="hdr-title">漢達 <span>Handa Pharma</span> 2026–2028</div>
     <div class="hdr-sub">資料基準：法說 2026/04/14 · 台新/中信投顧 · 039滲透模型：Logistic S曲線校正（業界24–36月爬坡實證）</div>
   </div>
@@ -280,11 +280,11 @@ tr:hover td{background:rgba(88,166,255,.04)}
   </div>
 
   <div class="tbox" style="margin-top:20px">
-    <div class="thdr"><div class="ttitle">年度財務摘要（2023–2030）</div><div class="tnote">億NTD · E=預測</div></div>
+    <div class="thdr"><div class="ttitle">年度財務摘要（2023–2030）</div><div class="tnote">億NTD · E=預測 · 🔵=含授權/里程碑</div></div>
     <div class="tscr"><table>
       <thead><tr>
         <th style="text-align:left">年度</th>
-        <th>合併營收</th><th style="color:var(--p2)">授權金</th><th>YoY</th>
+        <th>合併營收</th><th>YoY</th>
         <th>毛利率</th><th>營業利益</th>
         <th>稅後淨利</th><th>EPS</th><th>來源</th>
       </tr></thead>
@@ -339,7 +339,7 @@ tr:hover td{background:rgba(88,166,255,.04)}
       <table>
         <thead><tr>
           <th style="text-align:left">季度</th>
-          <th>DLS</th><th>Tascenso</th><th>Phyrago</th><th>HND-039</th><th style="color:var(--p2)">授權金</th><th>其他</th>
+          <th>DLS</th><th>Tascenso</th><th>Phyrago</th><th>HND-039</th><th>其他</th>
           <th>合計營收</th><th>毛利率</th><th>稅後淨利</th>
           <th class="bold" style="color:var(--a2)">EPS</th><th>YoY</th>
         </tr></thead>
@@ -501,6 +501,53 @@ tr:hover td{background:rgba(88,166,255,.04)}
 <!-- ══════ TAB 5: UPDATE ══════ -->
 <div class="panel" id="tab-update">
   <div class="sec-hd">實際 vs 模型預測 · 逐月對照</div>
+
+  <!-- ── 自動抓取區塊 ── -->
+  <div class="upd-card" style="margin-bottom:16px;border-color:rgba(88,166,255,.3);background:rgba(88,166,255,.04)">
+    <div class="upd-title" style="color:var(--c2)">🌐 自動抓取月營收（公開資訊觀測站）</div>
+    <div style="font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:12px;line-height:1.7">
+      自動從公開資訊觀測站抓取漢達 6620 最新月營收，解析後一鍵匯入模型。<br>
+      <span style="color:rgba(255,200,80,.8)">⚠ 需要瀏覽器允許跨域請求（CORS Proxy）。若抓取失敗，請改用手動輸入。</span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-family:var(--mono)">抓取年份（民國）</div>
+        <select class="fselect" id="fetch_year" style="width:100px">
+          <option value="115" selected>115（2026）</option>
+          <option value="114">114（2025）</option>
+          <option value="113">113（2024）</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-family:var(--mono)">月份（1–12）</div>
+        <select class="fselect" id="fetch_month" style="width:80px">
+          <option value="1">1月</option><option value="2">2月</option>
+          <option value="3">3月</option><option value="4" selected>4月</option>
+          <option value="5">5月</option><option value="6">6月</option>
+          <option value="7">7月</option><option value="8">8月</option>
+          <option value="9">9月</option><option value="10">10月</option>
+          <option value="11">11月</option><option value="12">12月</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:14px">
+        <button class="act-btn" id="fetch-btn" onclick="fetchMOPS()" style="background:rgba(88,166,255,.15);border-color:rgba(88,166,255,.4);color:var(--c2)">
+          📡 抓取
+        </button>
+        <button class="act-btn" id="fetch-all-btn" onclick="fetchMOPSAll()" style="background:rgba(88,166,255,.08);border-color:rgba(88,166,255,.25);color:var(--c2);font-size:11px">
+          📡 抓取全部（2024–今）
+        </button>
+      </div>
+    </div>
+    <!-- 狀態與結果 -->
+    <div id="fetch-status" style="display:none;font-size:12px;font-family:var(--mono);padding:10px 12px;border-radius:6px;margin-top:4px;line-height:1.8"></div>
+    <div id="fetch-result" style="display:none;margin-top:10px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-family:var(--mono)">抓取結果預覽（確認後匯入）：</div>
+      <div id="fetch-preview" style="background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:10px;font-family:var(--mono);font-size:13px;line-height:1.8"></div>
+      <button class="act-btn" id="fetch-import-btn" onclick="importFetched()" style="margin-top:10px;background:rgba(86,211,100,.12);border-color:rgba(86,211,100,.3);color:var(--g2)">
+        ✅ 確認匯入模型
+      </button>
+    </div>
+  </div>
 
   <!-- Input row -->
   <div style="display:grid;grid-template-columns:360px 1fr;gap:16px;margin-bottom:20px" class="upd-layout">
@@ -838,10 +885,11 @@ function getMonthly(sce='base') {
                31000, 31000, 31000, 31000,
                30500, 30500, 30000, 30000,  // 2029：微幅穩定
                29500, 29500, 29000, 29000], // 2030
-      phyByMo:[0,0,1500,2000, 3000,4000,5000,6000, 7000,8000,9000,10000,
-               11000,12000,13000,14000, 15000,15500,16000,16000, 16000,16000,16000,16000,
-               16000,16000,16000,15500, 15000,14500,14000,13500, 13000,12500,12000,11500,
-               11000,10500,10000,9500,  9000, 8500, 8000, 7500,  7000, 6500, 6000, 5500],
+      phyByMo:[0,0,10000,11000, 12000,13000,13500,13500, 14000,14000,14000,14000,
+               14000,14000,14000,13500, 13000,12500,12000,12000, 12000,11500,11500,11000,
+               11000,10500,10500,10000, 9500, 9000, 8500, 8000,  7500, 7000, 6500, 6000,
+               5500, 5000, 4500, 4500,  4000, 3500, 3500, 3000,  3000, 2500, 2500, 2000,
+               1500, 1500, 1000, 1000,  1000,  500,  500,  500,   500,  500,  500,  500],
       others: 1500,
     },
     base: {
@@ -855,10 +903,11 @@ function getMonthly(sce='base') {
                37000, 37000, 37000, 37000,
                37000, 37000, 37000, 37000,  // 2029：維持高原
                36500, 36500, 36000, 36000], // 2030
-      phyByMo:[0,0,2500,4000, 6000,8000,10000,12000, 14000,15500,17000,18000,
-               19000,20000,21000,22000, 23000,23500,24000,24000, 24000,24000,24000,24000,
-               24000,24000,24000,24000, 24000,23500,23000,22500, 22000,21500,21000,20500,
-               20000,19500,19000,18500, 18000,17500,17000,16500, 16000,15500,15000,14500],
+      phyByMo:[0,0,14000,15000, 16000,17000,17500,17500, 18000,18000,18000,18000,
+               18000,18000,18000,18000, 18000,18000,18000,18000, 18000,18000,18000,18000,
+               18000,17500,17500,17000, 16500,16000,15500,15000, 14500,14000,13500,13000,
+               12500,12000,11500,11000, 10500,10000, 9500, 9000,  8500, 8000, 7500, 7000,
+               6500, 6000, 5500, 5000,  4500, 4000, 3500, 3000,  2500, 2000, 1500, 1000],
       others: 2000,
     },
     bull: {
@@ -872,34 +921,33 @@ function getMonthly(sce='base') {
                42000, 42000, 42000, 42000,
                42000, 42000, 42000, 42000,  // 2029：高原維持
                41500, 41500, 41000, 41000], // 2030
-      phyByMo:[0,0,3000,6000, 9000,12000,15000,18000, 21000,23000,25000,27000,
-               28000,30000,32000,33000, 34000,35000,36000,36000, 36000,36000,36000,36000,
-               36000,36000,36000,36000, 36000,35500,35000,34500, 34000,33500,33000,32500,
-               32000,31500,31000,30500, 30000,29500,29000,28500, 28000,27500,27000,26500],
+      phyByMo:[0,0,18000,20000, 22000,24000,25000,26000, 26000,26000,27000,27000,
+               27000,27000,27000,27000, 27000,27000,27000,27000, 27000,27000,27000,27000,
+               27000,26500,26000,25500, 25000,24500,24000,23500, 23000,22500,22000,21500,
+               21000,20500,20000,19500, 19000,18500,18000,17500, 17000,16500,16000,15500,
+               15000,14500,14000,13500, 13000,12500,12000,11500, 11000,10500,10000, 9500],
       others: 2500,
     },
   }[sce];
 
-  // ── HND-039 授權金結構（一次性入帳，不含入月分潤）──
-  // 業界慣例（已取證/近取證資產）：
-  //   簽約金（upfront）：$20–40M USD，合約簽署月一次性認列
-  //   取證里程碑：$10–20M USD，FDA核准後認列
-  //   銷售里程碑：$20–50M USD，累計銷售達門檻後認列
+  // ── HND-039 授權金結構 ──
+  // 邏輯：PDUFA 2026/07/29 取得藥證後才能簽約，
+  //        簽約金（upfront）與取證里程碑均在取證當月認列。
+  //        銷售里程碑：累計銷售達門檻後認列。
   // 三情境假設：
-  //   保守：簽約金$15M + 取證$8M + 銷售里程碑$15M（合計$38M）
-  //   基本：簽約金$25M + 取證$12M + 銷售里程碑$25M（合計$62M）
-  //   樂觀：簽約金$35M + 取證$18M + 銷售里程碑$40M（合計$93M）
+  //   保守：簽約金$15M + 取證$8M + 銷售里程碑$15M
+  //   基本：簽約金$25M + 取證$12M + 銷售里程碑$25M
+  //   樂觀：簽約金$35M + 取證$18M + 銷售里程碑$40M
   const licsCfg = {
     bear: { upfront: 15, approval: 8,  milestones: [{salesThresM: 50, payM: 8}, {salesThresM: 100, payM: 7}] },
     base: { upfront: 25, approval: 12, milestones: [{salesThresM: 50, payM: 10},{salesThresM: 150, payM: 15}] },
     bull: { upfront: 35, approval: 18, milestones: [{salesThresM: 80, payM: 15},{salesThresM: 200, payM: 25}] },
   }[sce];
 
-  // 簽約時間：假設 PDUFA 前3個月簽約（如 PDUFA=2026Q3 mo6，則簽約在 mo3=2026Q2）
-  const contractMo = Math.max(0, h039StartMo - 3); // 提前3個月簽約
-  const approvalMo = h039StartMo;  // 取證里程碑在取證當月
+  // 取證當月才認列（簽約金 + 取證里程碑合併），PDUFA前不可能簽約
+  const approvalMo = h039StartMo;  // 取證月（mo索引）
 
-  // 計算累計銷售並觸發銷售里程碑
+  // 累計銷售（用於銷售里程碑觸發）
   let cumSalesM = 0;
   const milestonesTriggered = new Set();
 
@@ -907,12 +955,12 @@ function getMonthly(sce='base') {
     if (h039StartMo === 999) return 0;
     let lics = 0;
     const usd = parseFloat(document.getElementById('usd_ntd')?.value) || 32;
-    // 簽約金
-    if (mo === contractMo) lics += licsCfg.upfront * usd * 1000; // M USD → NTD K
-    // 取證里程碑
-    if (mo === approvalMo) lics += licsCfg.approval * usd * 1000;
-    // 銷售里程碑（累計銷售達門檻）
-    cumSalesM += h039SalesKThisMo / usd / 1000; // K NTD → M USD
+    // 取證當月：簽約金 + 取證里程碑一起入帳
+    if (mo === approvalMo) {
+      lics += (licsCfg.upfront + licsCfg.approval) * usd * 1000; // M USD → NTD K
+    }
+    // 銷售里程碑（累計銷售達門檻後認列）
+    cumSalesM += h039SalesKThisMo / usd / 1000;
     for (const ms of licsCfg.milestones) {
       if (!milestonesTriggered.has(ms.salesThresM) && cumSalesM >= ms.salesThresM) {
         lics += ms.payM * usd * 1000;
@@ -931,6 +979,42 @@ function getMonthly(sce='base') {
   const dlsMonths  = qToMonths(cfg.dlsQ);
   const tascMonths = qToMonths(cfg.tascQ);
 
+  // ── Phyrago 合約年保底扣除機制 ──
+  // 根據法說：Cycle 從 2026 年起，每年 1 月扣 $100 萬 USD 保底
+  // 扣完後超出部分才給漢達分潤（曆年制，Jan 重置）
+  // 合約年1 (Oct-25上市~Dec-25)：保底已在 Oct-Feb 消化（法說 Mar-26 達標）
+  //   → phyByMo Jan=0, Feb=0，Mar 起全額認列，不再額外扣除
+  // 2026 年起：每年 1 月重置，全年累計分潤超過 $100 萬 USD 才認列
+  //   → 2026 Jan-Feb=0（已設）從 Mar 開始累積，保底在前期消化
+  //   實際上 2026 Mar 就有認列（法說確認），代表保底在 2025Q4 即消化
+  // 2027 年起：1 月重置，月分潤較高，約 Jan-Feb 就消化保底
+  const PHY_FLOOR_K = 1000 * usd_rate;  // $100萬USD × 32 = 32,000 K NTD
+  let phyYrAccum = 0;   // 曆年累計毛分潤
+  let phyYrNet   = 0;   // 曆年已認列淨分潤
+  let phyPrevCalYr = -1; // 前一個曆年
+
+  function phyNetForMo(mo) {
+    const calYr = 2026 + Math.floor(mo / 12);
+    // 每年 1 月重置（2026 年第一次也重置，但 Jan-Feb=0 自然消化）
+    if (calYr !== phyPrevCalYr) {
+      phyYrAccum = 0; phyYrNet = 0; phyPrevCalYr = calYr;
+    }
+    const gross = Math.round(cfg.phyByMo[mo] || 0);
+    // 2026 年 Jan-Feb：phyByMo 已設為 0，自然不認列
+    // 2026 年 Mar 起：累積超保底後才認列（Mar 毛=14000K > 保底 32000K? 不夠）
+    // → 實際上需要 Mar+Apr... 才超過 32000K
+    // 但法說說 Mar 就開始認列 → 表示 2025 Q4 已幫 2026 消化保底
+    // 簡化處理：2026 年直接全額認列（保底已在 2025 消化），2027 起才扣
+    if (calYr === 2026) return gross; // 2026 年保底已在 2025 年消化
+
+    // 2027 年起：曆年 Jan 重置，扣保底
+    phyYrAccum += gross;
+    const netAccum = Math.max(0, phyYrAccum - PHY_FLOOR_K);
+    const net = Math.max(0, netAccum - phyYrNet);
+    phyYrNet += net;
+    return net;
+  }
+
   for (let mo = 0; mo < 60; mo++) {
     const yi    = Math.floor(mo / 12);
     const mi    = mo % 12;
@@ -940,10 +1024,11 @@ function getMonthly(sce='base') {
 
     const dls    = Math.round(dlsMonths[mo]);
     const tasc   = Math.round(tascMonths[mo]);
-    const phy    = Math.round(cfg.phyByMo[mo] || 0);
-    const h039   = Math.round(h039ForMo(mo));
+    const phy    = phyNetForMo(mo);  // 淨分潤（合約年Oct-Sep保底32000K NTD，動態計算）
+    const h039r  = Math.round(h039ForMo(mo));
+    const lics   = h039LicsForMo(mo, h039r);
+    const h039   = h039r + lics;
     const others = cfg.others;
-    const lics   = h039LicsForMo(mo, h039);  // 授權金（一次性，不計入 total）
     const total  = dls + tasc + phy + h039 + others;
 
     const histM    = HIST.find(h => h.y === year && h.m === month);
@@ -952,7 +1037,7 @@ function getMonthly(sce='base') {
     const prev = rows[rows.length - 1];
     const mom  = prev ? ((total / prev.total - 1) * 100) : null;
 
-    rows.push({ year, month, key, mo, dls, tasc, phy, h039, others, total, lics, yoy, mom,
+    rows.push({ year, month, key, mo, dls, tasc, phy, h039, h039r, others, total, lics, yoy, mom,
       actual: histM?.rev || null, isActual: !!histM });
   }
   return rows;
@@ -973,18 +1058,18 @@ function getQuarterly(sce='base') {
       const dls=months.reduce((s,r)=>s+r.dls,0);
       const tasc=months.reduce((s,r)=>s+r.tasc,0);
       const phy=months.reduce((s,r)=>s+r.phy,0);
-      const h039=months.reduce((s,r)=>s+r.h039,0);
+      const h039=months.reduce((s,r)=>s+r.h039,0);  // 已含授權金
+      const h039r=months.reduce((s,r)=>s+r.h039r,0); // 純分潤
+      const lics=months.reduce((s,r)=>s+(r.lics||0),0); // 授權金金額（標注用）
       const others=months.reduce((s,r)=>s+r.others,0);
-      const lics=months.reduce((s,r)=>s+(r.lics||0),0);
-      const rev=months.reduce((s,r)=>s+r.total,0);
-      const revTotal=rev+lics; // 含授權金的總認列營收
-      const gm=dls*p.dls_gm+tasc*p.tasc_gm+phy*p.phy_gm+h039*p.h039_gm+others*.9+lics*0.99;
-      const op=gm-revTotal*p.opex;
+      const rev=months.reduce((s,r)=>s+r.total,0);  // 已含授權金
+      const gm=dls*p.dls_gm+tasc*p.tasc_gm+phy*p.phy_gm+h039*p.h039_gm+others*.9;
+      const op=gm-rev*p.opex;
       const np=op*(1-p.tax);
       const eps=+(np/(p.sh*100000)).toFixed(2);
-      const is039=h039>0||lics>0;
-      qrows.push({qLabel,year,qi:qi+1,dls,tasc,phy,h039,others,lics,rev,revTotal,gm,op,np,eps,is039,
-        gmR:(gm/revTotal*100).toFixed(1)});
+      const hasLics=lics>0;
+      qrows.push({qLabel,year,qi:qi+1,dls,tasc,phy,h039,h039r,lics,others,rev,gm,op,np,eps,hasLics,
+        gmR:(gm/rev*100).toFixed(1)});
     }
   }
   return qrows;
@@ -1002,17 +1087,17 @@ function getAnnual(sce='base') {
     const dls=ym.reduce((s,r)=>s+r.dls,0);
     const tasc=ym.reduce((s,r)=>s+r.tasc,0);
     const phy=ym.reduce((s,r)=>s+r.phy,0);
-    const h039=ym.reduce((s,r)=>s+r.h039,0);
+    const h039=ym.reduce((s,r)=>s+r.h039,0);    // 含授權金
+    const h039r=ym.reduce((s,r)=>s+r.h039r,0);  // 純分潤（標注用）
+    const lics=ym.reduce((s,r)=>s+(r.lics||0),0); // 授權金總額（標注用）
     const others=ym.reduce((s,r)=>s+r.others,0);
-    const lics=ym.reduce((s,r)=>s+(r.lics||0),0);
-    const rev=ym.reduce((s,r)=>s+r.total,0);
-    const revTotal=rev+lics;
-    const gm=dls*p.dls_gm+tasc*p.tasc_gm+phy*p.phy_gm+h039*p.h039_gm+others*.9+lics*0.99;
-    const op=gm-revTotal*p.opex;
+    const rev=ym.reduce((s,r)=>s+r.total,0);    // 已含授權金
+    const gm=dls*p.dls_gm+tasc*p.tasc_gm+phy*p.phy_gm+h039*p.h039_gm+others*.9;
+    const op=gm-rev*p.opex;
     const np=op*(1-p.tax);
     const eps=+(np/(p.sh*100000)).toFixed(2);
-    aRows.push({year:y,rev,revTotal,lics,dls,tasc,phy,h039,others,gm,op,np,eps,
-      gmR:(gm/revTotal*100).toFixed(1)});
+    aRows.push({year:y,rev,lics,h039r,dls,tasc,phy,h039,others,gm,op,np,eps,
+      gmR:(gm/rev*100).toFixed(1)});
   });
   return aRows;
 }
@@ -1130,32 +1215,27 @@ function renderOverview() {
     </div>
   `;
 
-  // Annual table — 2023A–2030E，含授權金欄
+  // Annual table — 2023A–2030E，039授權金依會計原則併入當月營收
   const ab=document.getElementById('annual-tbody');ab.innerHTML='';
   const histRows=[
-    {year:2023,revB:11.06,gmR:99.9,opB:6.93,npB:7.27,eps:5.41,licsNote:'—',isE:false},
-    {year:2024,revB:8.31, gmR:99.9,opB:4.18,npB:4.73,eps:3.37,licsNote:'—',isE:false},
-    {year:2025,revB:17.29,gmR:84.5,opB:9.34,npB:7.50,eps:4.85,licsNote:'7.3億(授)',isE:false},
+    {year:2023,revB:11.06,gmR:99.9,opB:6.93,npB:7.27,eps:5.41,note:'',isE:false},
+    {year:2024,revB:8.31, gmR:99.9,opB:4.18,npB:4.73,eps:3.37,note:'',isE:false},
+    {year:2025,revB:17.29,gmR:84.5,opB:9.34,npB:7.50,eps:4.85,note:'含Phyrago授權7.3億',isE:false},
   ];
   [...histRows,...ann.map(r=>({
-    year:r.year,
-    revB:(r.revTotal/100000),
-    gmR:r.gmR,
-    opB:(r.op/100000),
-    npB:(r.np/100000),
-    eps:r.eps,
-    licsNote:r.lics>0?`+${(r.lics/100000).toFixed(2)}億`:null,
+    year:r.year, revB:(r.rev/100000), gmR:r.gmR,
+    opB:(r.op/100000), npB:(r.np/100000), eps:r.eps,
+    note:r.lics>0?`含039授/里程碑${(r.lics/100000).toFixed(1)}億`:'',
     isE:true
   }))].forEach((r,i,arr)=>{
     const prev=arr[i-1];
     const yoy=prev?posNeg((r.revB/prev.revB-1)*100,0):'—';
-    const licsCell = r.isE
-      ? (r.licsNote?`<span style="color:var(--p2);font-size:11px;font-family:var(--mono)">${r.licsNote}</span>`:'<span style="color:var(--muted)">—</span>')
-      : `<span style="color:var(--p2);font-size:11px">${r.licsNote}</span>`;
+    const revCell=r.note
+      ? `${r.revB.toFixed(2)}億&thinsp;<span style="font-size:10px;color:var(--p2);font-family:var(--mono)">●${r.note}</span>`
+      : `${r.revB.toFixed(2)}億`;
     ab.innerHTML+=`<tr>
       <td class="${r.isE?'ca bold':'bold'}">${r.year}${r.isE?'E':'A'}</td>
-      <td class="${r.isE?'ca':''}" style="font-family:var(--mono)">${r.revB.toFixed(2)}億</td>
-      <td>${licsCell}</td>
+      <td class="${r.isE?'ca':''}" style="font-family:var(--mono)">${revCell}</td>
       <td>${yoy}</td>
       <td class="neu">${r.gmR}%</td>
       <td style="font-family:var(--mono)">${r.opB.toFixed(2)}億</td>
@@ -1230,9 +1310,9 @@ function renderEPS() {
       <td class="ct">${fmt(r.tasc)}</td>
       <td class="ca">${fmt(r.phy)}</td>
       <td class="cp">${r.h039>0?fmt(r.h039):'<span class="neu">—</span>'}</td>
-      <td class="cp" style="font-size:11px">${r.lics>0?'<span style="color:var(--p2)">+'+fmt(r.lics)+'</span>':'<span class="neu">—</span>'}</td>
+      <td class="cp">${r.h039r>0||r.lics>0?fmt(r.h039)+(r.lics>0?'<span style="font-size:10px;color:var(--p2)"> ●授</span>':''):'<span class="neu">—</span>'}</td>
       <td class="neu">${fmt(r.others)}</td>
-      <td class="bold">${fmt(r.revTotal)}</td>
+      <td class="bold">${fmt(r.rev)}</td>
       <td class="neu">${r.gmR}%</td>
       <td>${fmt(r.np)}</td>
       <td class="${epsColor} bold" style="font-size:15px">${hq||r.eps}元</td>
@@ -1240,35 +1320,26 @@ function renderEPS() {
     </tr>`;
   });
 
-  // P&L table — 統一顯示億NTD，5年預測
+  // P&L table — 授權金依會計原則已併入039/合計，不獨立列示
   const pb=document.getElementById('pnl-tbody');pb.innerHTML='';
   const fann=getAnnual(epsSce);
   const toB_hist = v => (v/100).toFixed(2)+'億';
   const toB_fcst = v => (v/100000).toFixed(2)+'億';
   const pnlDefs=[
-    {label:'合併營收',  hv:[831,1729],   fv:fann.map(r=>r.revTotal), bold:false},
-    {label:'  含授權金',hv:[0,730],      fv:fann.map(r=>r.lics),    bold:false,isLics:true},
-    {label:'毛利',      hv:[830,1462],   fv:fann.map(r=>r.gm),      bold:false},
+    {label:'合併營收',  hv:[831,1729],      fv:fann.map(r=>r.rev),  bold:false},
+    {label:'毛利',      hv:[830,1462],      fv:fann.map(r=>r.gm),   bold:false},
     {label:'毛利率',    hv:['99.9%','84.5%'],fv:fann.map(r=>r.gmR+'%'),isStr:true},
-    {label:'營業利益',  hv:[418,934],    fv:fann.map(r=>r.op),      bold:false},
-    {label:'稅後淨利',  hv:[473,750],    fv:fann.map(r=>r.np),      bold:false},
-    {label:'EPS（元）', hv:[3.37,4.85],  fv:fann.map(r=>r.eps),     bold:true, isEPS:true},
+    {label:'營業利益',  hv:[418,934],       fv:fann.map(r=>r.op),   bold:false},
+    {label:'稅後淨利',  hv:[473,750],       fv:fann.map(r=>r.np),   bold:false},
+    {label:'EPS（元）', hv:[3.37,4.85],     fv:fann.map(r=>r.eps),  bold:true, isEPS:true},
   ];
   pnlDefs.forEach(row=>{
-    const cells = [
-      ...row.hv.map(v=>{
-        if(row.isStr||row.isEPS) return `${v}${row.isEPS?'元':''}`;
-        if(row.isLics) return v>0?`<span style="color:var(--p2)">${(v/100).toFixed(2)}億</span>`:'—';
-        return toB_hist(v);
-      }),
-      ...row.fv.map(v=>{
-        if(row.isStr||row.isEPS) return `${v}${row.isEPS?'元':''}`;
-        if(row.isLics) return v>0?`<span style="color:var(--p2)">${(v/100000).toFixed(2)}億</span>`:'—';
-        return toB_fcst(v);
-      }),
+    const cells=[
+      ...row.hv.map(v=>row.isStr||row.isEPS?`${v}${row.isEPS?'元':''}`:toB_hist(v)),
+      ...row.fv.map(v=>row.isStr||row.isEPS?`${v}${row.isEPS?'元':''}`:toB_fcst(v)),
     ];
     pb.innerHTML+=`<tr>
-      <td class="${row.bold?'bold':''}" style="font-size:${row.isLics?'12px':'inherit'};color:${row.isLics?'var(--muted)':'inherit'}">${row.label}</td>
+      <td class="${row.bold?'bold':''}">${row.label}</td>
       ${cells.map((c,i)=>`<td class="${row.bold&&i>1?'ca bold':''}" style="${row.bold?'font-size:15px':''}">${c}</td>`).join('')}
     </tr>`;
   });
@@ -1614,6 +1685,186 @@ function renderParams() {
       `參考：Cabometyx 2016上市→2019年達高原（約3年）`;
   }
 }
+
+// ═══════════════════════════════════════════
+// MOPS 自動抓取月營收（漢達 6620）
+// ═══════════════════════════════════════════
+// 策略：直接打 MOPS（file:// 環境 CORS 較寬鬆）→ 失敗 → allorigins proxy
+// MOPS 月營收彙總表：https://mops.twse.com.tw/nas/t21/sii/t21sc03_{ROC年}_{月}_0.html
+// 頁面為 Big5 編碼，用 TextDecoder 解碼
+
+let fetchedData = [];
+
+function setFetchStatus(msg, type) {
+  const el = document.getElementById('fetch-status');
+  if (!el) return;
+  const bg = {
+    info:    'rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.2);color:#67b8ff',
+    success: 'rgba(86,211,100,.08);border:1px solid rgba(86,211,100,.2);color:#56d364',
+    error:   'rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);color:#f85149',
+    warn:    'rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);color:#e3b341',
+  }[type] || 'rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.2);color:#67b8ff';
+  el.style.cssText = `display:block;font-size:12px;font-family:var(--mono);padding:10px 12px;border-radius:6px;margin-top:4px;line-height:1.8;background:${bg}`;
+  el.innerHTML = msg;
+}
+
+function parseMOPSTable(html, adYear, month) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  for (const row of doc.querySelectorAll('tr')) {
+    const cells = row.querySelectorAll('td');
+    if (cells.length < 4) continue;
+    const code = cells[0].textContent.replace(/\s/g, '');
+    if (code !== '6620') continue;
+    const rev = parseInt(cells[2].textContent.replace(/[,\s]/g, ''));
+    if (isNaN(rev) || rev <= 0) continue;
+    return { year: adYear, month, rev };
+  }
+  return null;
+}
+
+async function fetchOneMonth(adYear, month) {
+  const roc = adYear - 1911;
+  for (const path of ['sii', 'otc']) {
+    const base = `https://mops.twse.com.tw/nas/t21/${path}/t21sc03_${roc}_${month}_0.html`;
+    for (const url of [
+      base,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(base)}`,
+    ]) {
+      try {
+        const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (!resp.ok) continue;
+        const buf  = await resp.arrayBuffer();
+        const text = new TextDecoder('big5', { fatal: false }).decode(buf);
+        const result = parseMOPSTable(text, adYear, month);
+        if (result) return result;
+      } catch(e) { /* try next */ }
+    }
+  }
+  return null;
+}
+
+async function fetchMOPS() {
+  const rocYear = parseInt(document.getElementById('fetch_year').value);
+  const month   = parseInt(document.getElementById('fetch_month').value);
+  const adYear  = rocYear + 1911;
+  const btn     = document.getElementById('fetch-btn');
+  document.getElementById('fetch-result').style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = '⏳ 抓取中…';
+  setFetchStatus(`📡 連線公開資訊觀測站 ${adYear}年${month}月…`, 'info');
+
+  try {
+    const result = await fetchOneMonth(adYear, month);
+    if (!result) throw new Error('找不到 6620 資料（該月尚未公告或代號不符）');
+    fetchedData = [result];
+    showFetchPreview(fetchedData);
+    setFetchStatus(`✅ 成功取得 ${adYear}年${month}月 營收`, 'success');
+  } catch(e) {
+    setFetchStatus(
+      `❌ 抓取失敗：${e.message}<br>` +
+      `請確認：① 該月是否已公告　② 網路是否允許連外<br>` +
+      `也可改用下方手動輸入`, 'error');
+    fetchedData = [];
+  }
+  btn.disabled = false;
+  btn.textContent = '📡 抓取';
+}
+
+async function fetchMOPSAll() {
+  const btn = document.getElementById('fetch-all-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 批次抓取中…';
+  fetchedData = [];
+  document.getElementById('fetch-result').style.display = 'none';
+
+  const now   = new Date();
+  const endAD = now.getFullYear();
+  const endM  = now.getMonth();  // 取上個月（月營收延遲公告）
+
+  const list = [];
+  for (let y = 2024; y <= endAD; y++) {
+    const mS = 1, mE = (y === endAD ? endM : 12);
+    for (let m = mS; m <= mE; m++) list.push({ y, m });
+  }
+
+  let ok = 0, skip = 0, fail = 0;
+  for (const { y, m } of list) {
+    if (HIST.find(h => h.y === y && h.m === m && !h.userAdded)) { skip++; continue; }
+    setFetchStatus(`📡 ${y}/${String(m).padStart(2,'0')}（第${ok+fail+1}筆，跳過${skip}）`, 'info');
+    const got = await fetchOneMonth(y, m);
+    if (got) { fetchedData.push(got); ok++; }
+    else fail++;
+    await new Promise(r => setTimeout(r, 350));
+  }
+
+  btn.disabled = false;
+  btn.textContent = '📡 抓取全部（2024–今）';
+
+  if (!fetchedData.length) {
+    setFetchStatus(`⚠ 無新資料（已全部存在或抓取失敗）`, 'warn');
+    return;
+  }
+  showFetchPreview(fetchedData);
+  setFetchStatus(`✅ 完成：取得 ${ok} 筆，跳過 ${skip} 筆，失敗 ${fail} 筆`, 'success');
+}
+
+function showFetchPreview(data) {
+  const lines = data.slice(-6).map(d => {
+    const py = HIST.find(h => h.y===d.year-1 && h.m===d.month);
+    const pm = HIST.filter(h=>h.y<d.year||(h.y===d.year&&h.m<d.month))
+                   .sort((a,b)=>a.y!==b.y?a.y-b.y:a.m-b.m).slice(-1)[0];
+    const yoy = py ? +((d.rev/py.rev-1)*100).toFixed(1) : null;
+    const mom = pm ? +((d.rev/pm.rev-1)*100).toFixed(1) : null;
+    const exist = HIST.find(h=>h.y===d.year&&h.m===d.month);
+    return `<span style="color:var(--c2)">${d.year}/${String(d.month).padStart(2,'0')}</span>` +
+      `　<strong style="color:var(--g2)">${d.rev.toLocaleString()}</strong> 千元` +
+      `（${(d.rev/100000).toFixed(3)}億）` +
+      (yoy!=null?`　YoY <span style="color:${yoy>=0?'var(--g2)':'var(--r2)'}">${yoy>=0?'+':''}${yoy}%</span>`:'')+
+      (mom!=null?`　MoM <span style="color:${mom>=0?'var(--g2)':'var(--r2)'}">${mom>=0?'+':''}${mom}%</span>`:'')+
+      (exist?' <span style="color:var(--a2);font-size:10px">（覆蓋）</span>':'');
+  }).join('<br>');
+  document.getElementById('fetch-preview').innerHTML =
+    (data.length>6?`<div style="color:var(--muted);margin-bottom:4px">共 ${data.length} 筆，顯示最後6筆：</div>`:'')+lines;
+  document.getElementById('fetch-result').style.display = 'block';
+}
+
+function importFetched() {
+  if (!fetchedData.length) return;
+  let n = 0;
+  fetchedData.forEach(d => {
+    const { year: y, month: m, rev } = d;
+    const py = HIST.find(h=>h.y===y-1&&h.m===m);
+    const pm = HIST.filter(h=>h.y<y||(h.y===y&&h.m<m)).sort((a,b)=>a.y!==b.y?a.y-b.y:a.m-b.m).slice(-1)[0];
+    const yoy = py?+((rev/py.rev-1)*100).toFixed(1):null;
+    const mom = pm?+((rev/pm.rev-1)*100).toFixed(1):null;
+    const idx = HIST.findIndex(h=>h.y===y&&h.m===m);
+    const row = { y, m, rev, yoy, mom, userAdded:true };
+    if (idx>=0) HIST[idx]=row; else { HIST.push(row); HIST.sort((a,b)=>a.y!==b.y?a.y-b.y:a.m-b.m); }
+
+    userActuals = userActuals.filter(r=>!(r.yr===y&&r.mo===m));
+    const fcst = getMonthly('base').find(r=>r.year===y&&r.month===m);
+    if (fcst) {
+      const ft = fcst.total||0, sc = ft>0?rev/ft:1;
+      userActuals.push({
+        month:`${y}/${String(m).padStart(2,'0')}`, yr:y, mo:m, total:rev,
+        aDLS:Math.round(fcst.dls*sc), aTasc:Math.round(fcst.tasc*sc),
+        aPhy:Math.round(fcst.phy*sc), aOth:Math.max(0,rev-Math.round((fcst.dls+fcst.tasc+fcst.phy)*sc)),
+        fTotal:ft, fDLS:fcst.dls, fTasc:fcst.tasc, fPhy:fcst.phy,
+        fH039:fcst.h039, fOth:fcst.others, hasBreakdown:false,
+        err:rev-ft, errPct:ft>0?(rev-ft)/ft*100:0
+      });
+    }
+    n++;
+  });
+  userActuals.sort((a,b)=>a.yr!==b.yr?a.yr-b.yr:a.mo-b.mo);
+  setFetchStatus(`✅ 已匯入 ${n} 筆至模型`, 'success');
+  document.getElementById('fetch-result').style.display = 'none';
+  fetchedData = [];
+  try { renderUpdateTab(); } catch(e){}
+  setTimeout(()=>{ try{refreshAll();}catch(e){} }, 50);
+}
+
 
 // ═══════════════════════════════════════════
 // UPDATE MODULE — FULL ACTUAL vs FORECAST
